@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>LOST & FOUND 🐙</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap');
+
+- { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+–deep: #020818;
+–abyss: #030d2e;
+–glow: #00e5ff;
+–tentacle: #7c3aed;
+–food: #ff6b35;
+–danger: #ff2d55;
+–gold: #ffd700;
+–found: #00ff88;
+}
+
+body {
+background: var(–deep);
+font-family: ‘Exo 2’, sans-serif;
+overflow: hidden;
+height: 100vh;
+width: 100vw;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+}
+
+/* Animated ocean background */
+.ocean-bg {
+position: fixed;
+inset: 0;
+background:
+radial-gradient(ellipse at 20% 50%, rgba(0,80,160,0.3) 0%, transparent 60%),
+radial-gradient(ellipse at 80% 20%, rgba(100,0,200,0.2) 0%, transparent 50%),
+radial-gradient(ellipse at 50% 100%, rgba(0,30,80,0.8) 0%, transparent 70%),
+linear-gradient(180deg, #020818 0%, #041230 50%, #020818 100%);
+z-index: 0;
+}
+
+.bubbles {
+position: fixed;
+inset: 0;
+z-index: 1;
+pointer-events: none;
+}
+
+.bubble {
+position: absolute;
+border-radius: 50%;
+background: rgba(0,229,255,0.08);
+border: 1px solid rgba(0,229,255,0.15);
+animation: rise linear infinite;
+bottom: -20px;
+}
+
+@keyframes rise {
+0% { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+10% { opacity: 1; }
+90% { opacity: 0.5; }
+100% { transform: translateY(-110vh) translateX(30px) scale(1.2); opacity: 0; }
+}
+
+/* SCREENS */
+.screen { position: relative; z-index: 10; width: 100%; height: 100vh; display: none; flex-direction: column; align-items: center; justify-content: center; }
+.screen.active { display: flex; }
+
+/* TITLE SCREEN */
+#titleScreen {
+gap: 20px;
+padding: 30px 20px;
+}
+
+.title-octopus {
+font-size: 90px;
+animation: float 3s ease-in-out infinite;
+filter: drop-shadow(0 0 30px rgba(0,229,255,0.6));
+}
+
+@keyframes float {
+0%, 100% { transform: translateY(0) rotate(-5deg); }
+50% { transform: translateY(-15px) rotate(5deg); }
+}
+
+.game-title {
+font-family: ‘Orbitron’, monospace;
+font-weight: 900;
+font-size: clamp(28px, 8vw, 52px);
+color: white;
+text-align: center;
+letter-spacing: 6px;
+text-shadow: 0 0 40px var(–glow), 0 0 80px rgba(0,229,255,0.3);
+line-height: 1.1;
+}
+
+.game-subtitle {
+font-size: 13px;
+letter-spacing: 4px;
+color: var(–glow);
+text-transform: uppercase;
+opacity: 0.7;
+}
+
+.tentacle-status {
+display: flex;
+gap: 8px;
+align-items: center;
+background: rgba(0,229,255,0.05);
+border: 1px solid rgba(0,229,255,0.2);
+border-radius: 40px;
+padding: 10px 20px;
+}
+
+.tentacle-dot {
+width: 18px; height: 18px;
+border-radius: 50%;
+background: rgba(255,255,255,0.1);
+border: 2px solid rgba(255,255,255,0.2);
+transition: all 0.5s;
+}
+
+.tentacle-dot.found {
+background: var(–tentacle);
+border-color: var(–found);
+box-shadow: 0 0 12px var(–tentacle);
+}
+
+.story-text {
+font-size: 14px;
+color: rgba(255,255,255,0.6);
+text-align: center;
+max-width: 320px;
+line-height: 1.7;
+}
+
+.story-text span {
+color: var(–glow);
+}
+
+.start-btn {
+background: linear-gradient(135deg, var(–tentacle), #4f46e5);
+color: white;
+border: none;
+padding: 16px 50px;
+border-radius: 50px;
+font-family: ‘Orbitron’, monospace;
+font-size: 16px;
+font-weight: 700;
+letter-spacing: 3px;
+cursor: pointer;
+box-shadow: 0 0 30px rgba(124,58,237,0.5), inset 0 1px 0 rgba(255,255,255,0.2);
+transition: all 0.3s;
+animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+0%, 100% { box-shadow: 0 0 30px rgba(124,58,237,0.5); }
+50% { box-shadow: 0 0 50px rgba(124,58,237,0.8), 0 0 80px rgba(0,229,255,0.3); }
+}
+
+.start-btn:active { transform: scale(0.96); }
+
+/* GAME SCREEN */
+#gameScreen { padding: 0; position: relative; }
+
+.hud {
+position: absolute;
+top: 0; left: 0; right: 0;
+z-index: 20;
+padding: 12px 16px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+background: linear-gradient(180deg, rgba(2,8,24,0.9) 0%, transparent 100%);
+}
+
+.hud-left { display: flex; flex-direction: column; gap: 2px; }
+
+.level-label {
+font-family: ‘Orbitron’, monospace;
+font-size: 10px;
+color: var(–glow);
+letter-spacing: 3px;
+opacity: 0.7;
+}
+
+.level-val {
+font-family: ‘Orbitron’, monospace;
+font-size: 22px;
+font-weight: 900;
+color: white;
+line-height: 1;
+}
+
+.tentacles-hud {
+display: flex;
+gap: 5px;
+}
+
+.t-pip {
+width: 14px; height: 14px;
+border-radius: 50%;
+background: rgba(255,255,255,0.1);
+border: 1.5px solid rgba(255,255,255,0.2);
+transition: all 0.4s;
+}
+
+.t-pip.active {
+background: var(–tentacle);
+border-color: var(–found);
+box-shadow: 0 0 8px var(–tentacle);
+}
+
+.score-display {
+font-family: ‘Orbitron’, monospace;
+font-size: 18px;
+font-weight: 700;
+color: var(–gold);
+text-shadow: 0 0 15px var(–gold);
+}
+
+canvas {
+display: block;
+width: 100%;
+height: 100%;
+touch-action: none;
+}
+
+/* Controls hint */
+.controls-hint {
+position: absolute;
+bottom: 20px;
+left: 50%;
+transform: translateX(-50%);
+font-size: 11px;
+color: rgba(255,255,255,0.3);
+letter-spacing: 2px;
+z-index: 20;
+text-align: center;
+}
+
+/* Touch drag hint */
+.drag-hint {
+position: absolute;
+bottom: 24px;
+left: 50%;
+transform: translateX(-50%);
+font-size: 11px;
+color: rgba(255,255,255,0.25);
+letter-spacing: 2px;
+z-index: 20;
+text-align: center;
+pointer-events: none;
+}
+
+.touch-center { display: flex; gap: 12px; }
+
+/* LEVEL CLEAR / GAME OVER screens */
+.overlay-screen {
+position: fixed;
+inset: 0;
+z-index: 100;
+display: none;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+background: rgba(2,8,24,0.92);
+backdrop-filter: blur(12px);
+gap: 18px;
+padding: 30px;
+}
+
+.overlay-screen.show { display: flex; }
+
+.overlay-emoji { font-size: 70px; animation: float 2s ease-in-out infinite; }
+
+.overlay-title {
+font-family: ‘Orbitron’, monospace;
+font-size: clamp(22px, 6vw, 36px);
+font-weight: 900;
+color: white;
+text-align: center;
+letter-spacing: 4px;
+}
+
+.overlay-title.success { color: var(–found); text-shadow: 0 0 30px var(–found); }
+.overlay-title.fail { color: var(–danger); text-shadow: 0 0 30px var(–danger); }
+
+.overlay-sub {
+font-size: 14px;
+color: rgba(255,255,255,0.6);
+text-align: center;
+line-height: 1.7;
+}
+
+.overlay-sub span { color: var(–glow); font-weight: 600; }
+
+.overlay-btn {
+background: linear-gradient(135deg, var(–tentacle), #4f46e5);
+color: white;
+border: none;
+padding: 14px 40px;
+border-radius: 50px;
+font-family: ‘Orbitron’, monospace;
+font-size: 14px;
+font-weight: 700;
+letter-spacing: 2px;
+cursor: pointer;
+margin-top: 8px;
+transition: all 0.2s;
+}
+
+.overlay-btn:active { transform: scale(0.95); }
+
+/* Particle container */
+.particles { position: fixed; inset: 0; pointer-events: none; z-index: 50; }
+
+.particle {
+position: absolute;
+border-radius: 50%;
+pointer-events: none;
+animation: particleFly 1s ease-out forwards;
+}
+
+@keyframes particleFly {
+0% { transform: translate(0,0) scale(1); opacity: 1; }
+100% { transform: translate(var(–tx), var(–ty)) scale(0); opacity: 0; }
+}
+</style>
+
+</head>
+<body>
+
+<div class="ocean-bg"></div>
+<div class="bubbles" id="bubbles"></div>
+<div class="particles" id="particles"></div>
+
+<!-- TITLE SCREEN -->
+
+<div class="screen active" id="titleScreen">
+  <div class="title-octopus">🐙</div>
+  <div>
+    <div class="game-title">LOST &<br>FOUND</div>
+    <div class="game-subtitle" style="text-align:center;margin-top:8px;">AN OCEAN ODYSSEY</div>
+  </div>
+  <p class="story-text">
+    Two souls. One mission. <span>8 tentacles stolen</span> by the deep.<br>
+    Eat all 🦐 to unlock each tentacle.<br>
+    <span>Grumpy</span> leads levels 1–3 · <span>Dripped</span> takes over 4–8.<br>
+    🖤 Double-tap = <span>ink blast</span>.
+  </p>
+  <div class="tentacle-status" id="titleTentacles"></div>
+  <button class="start-btn" onclick="startGame()">DIVE IN</button>
+</div>
+
+<!-- GAME SCREEN -->
+
+<div class="screen" id="gameScreen">
+  <div class="hud">
+    <div class="hud-left">
+      <div class="level-label">LEVEL</div>
+      <div class="level-val" id="levelVal">01</div>
+    </div>
+    <div class="tentacles-hud" id="tentaclesHud"></div>
+    <div class="score-display" id="scoreVal">0</div>
+  </div>
+  <canvas id="gameCanvas"></canvas>
+  <div class="drag-hint">DRAG TO MOVE · DOUBLE-TAP FOR INK 🖤</div>
+</div>
+
+<!-- LEVEL CLEAR -->
+
+<div class="overlay-screen" id="levelClear">
+  <div class="overlay-emoji" id="clearEmoji">✨</div>
+  <div class="overlay-title success" id="clearTitle">TENTACLE FOUND!</div>
+  <div class="overlay-sub" id="clearSub"></div>
+  <button class="overlay-btn" onclick="nextLevel()">NEXT DEPTH ▶</button>
+</div>
+
+<!-- GAME OVER -->
+
+<div class="overlay-screen" id="gameOver">
+  <div class="overlay-emoji">💀</div>
+  <div class="overlay-title fail">SWEPT AWAY</div>
+  <div class="overlay-sub" id="gameOverSub"></div>
+  <button class="overlay-btn" onclick="restartGame()">TRY AGAIN</button>
+  <button class="overlay-btn" style="background:rgba(255,255,255,0.1);margin-top:-8px" onclick="goTitle()">MAIN MENU</button>
+</div>
+
+<!-- WIN SCREEN -->
+
+<div class="overlay-screen" id="winScreen">
+  <div class="overlay-emoji" style="font-size:90px">🐙</div>
+  <div class="overlay-title success">WHOLE AGAIN</div>
+  <div class="overlay-sub">All <span>8 tentacles</span> recovered.<br>You've found your way back.<br><span>The ocean is yours.</span></div>
+  <button class="overlay-btn" onclick="restartGame()">PLAY AGAIN</button>
+</div>
+
+<script>
+// ─── BUBBLES ───────────────────────────────────────────────
+const bubblesEl = document.getElementById('bubbles');
+for (let i = 0; i < 18; i++) {
+  const b = document.createElement('div');
+  b.className = 'bubble';
+  const size = Math.random() * 14 + 4;
+  b.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;animation-duration:${Math.random()*12+8}s;animation-delay:${Math.random()*10}s`;
+  bubblesEl.appendChild(b);
+}
+
+// ─── TITLE TENTACLES ────────────────────────────────────────
+function renderTitleTentacles(found) {
+  const el = document.getElementById('titleTentacles');
+  el.innerHTML = '';
+  for (let i = 0; i < 8; i++) {
+    const d = document.createElement('div');
+    d.className = 'tentacle-dot' + (i < found ? ' found' : '');
+    el.appendChild(d);
+  }
+}
+renderTitleTentacles(0);
+
+// ─── GAME STATE ─────────────────────────────────────────────
+let gameState = {};
+const keys = { left: false, right: false, up: false, down: false };
+
+function initState() {
+  return {
+    level: 1,
+    tentacles: 0,
+    score: 0,
+    player: { x: 0, y: 0, vx: 0, vy: 0, size: 28, hp: 1, invincible: 0, inkCooldown: 0 },
+    foods: [],
+    obstacles: [],
+    tentacleItem: null,
+    tentacleLocked: true,   // locked until all food eaten
+    particles: [],
+    frame: 0,
+    animFrame: null,
+    levelClearing: false,
+    timeLeft: 0,            // countdown timer
+    inkClouds: []           // ink blasts that freeze enemies
+  };
+}
+
+// ─── CANVAS SETUP ───────────────────────────────────────────
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// ─── KEYBOARD ───────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = true;
+  if (e.key === 'ArrowRight' || e.key === 'd') keys.right = true;
+  if (e.key === 'ArrowUp' || e.key === 'w') keys.up = true;
+  if (e.key === 'ArrowDown' || e.key === 's') keys.down = true;
+});
+document.addEventListener('keyup', e => {
+  if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = false;
+  if (e.key === 'ArrowRight' || e.key === 'd') keys.right = false;
+  if (e.key === 'ArrowUp' || e.key === 'w') keys.up = false;
+  if (e.key === 'ArrowDown' || e.key === 's') keys.down = false;
+});
+
+// ─── LEVEL GENERATION ────────────────────────────────────────
+function generateLevel(state) {
+  const W = canvas.width, H = canvas.height;
+  const lvl = state.level;
+
+  // Difficulty tier
+  const easy   = lvl <= 4;
+  const medium  = lvl >= 5 && lvl <= 6;
+  const hard    = lvl >= 7;
+
+  // Player start
+  state.player.x = W * 0.1;
+  state.player.y = H * 0.5;
+  state.player.vx = 0;
+  state.player.vy = 0;
+  state.player.hp = easy ? 3 : medium ? 2 : 1;
+  state.player.invincible = 0;
+  state.player.inkCooldown = 0;
+
+  // Timer per tier
+  state.timeLeft = easy ? 50 : medium ? 32 : 20;
+
+  // Food count per tier
+  const foodCount = easy ? 2 + Math.floor(lvl * 0.8) : medium ? 4 + lvl : 6 + lvl;
+  state.foods = [];
+  for (let i = 0; i < foodCount; i++) {
+    state.foods.push({
+      x: W * (0.2 + Math.random() * 0.65),
+      y: H * (0.15 + Math.random() * 0.65),
+      size: 14,
+      collected: false,
+      wobble: Math.random() * Math.PI * 2
+    });
+  }
+
+  state.tentacleItem = { x: W * 0.88, y: H * 0.5, size: 22, glow: 0 };
+  state.tentacleLocked = true;
+  state.inkClouds = [];
+
+  // Obstacle count & speed per tier — smooth curve within each tier
+  const obsCount = easy
+    ? 2 + lvl * 1.5                    // lvl1=3, lvl2=5, lvl3=6, lvl4=8
+    : medium
+    ? 10 + (lvl - 4) * 3               // lvl5=13, lvl6=16
+    : 18 + (lvl - 6) * 4;              // lvl7=22, lvl8=26
+
+  const baseSpeed = easy
+    ? 0.6 + lvl * 0.18                 // 0.78 → 1.32
+    : medium
+    ? 1.5 + (lvl - 4) * 0.4           // lvl5=1.9, lvl6=2.3
+    : 2.8 + (lvl - 6) * 0.6;          // lvl7=3.4, lvl8=4.0
+
+  state.obstacles = [];
+  for (let i = 0; i < Math.floor(obsCount); i++) {
+    const roll = Math.random();
+    let type, homing;
+
+    if (easy) {
+      // lvl 1-2: nets only. lvl 3-4: nets + currents, no sharks
+      type = (lvl <= 2 || roll < 0.6) ? 'net' : 'current';
+      homing = false;
+    } else if (medium) {
+      // lvl 5: mix of all, sharks appear but don't home
+      // lvl 6: sharks start homing
+      type = roll < 0.35 ? 'net' : roll < 0.65 ? 'current' : 'predator';
+      homing = type === 'predator' && lvl >= 6;
+    } else {
+      // lvl 7-8: all sharks home, wall of obstacles
+      type = roll < 0.25 ? 'net' : roll < 0.45 ? 'current' : 'predator';
+      homing = type === 'predator';
+    }
+
+    const angle = Math.random() * Math.PI * 2;
+    const speedVar = baseSpeed + Math.random() * baseSpeed * 0.35;
+    state.obstacles.push({
+      x: W * (0.25 + Math.random() * 0.6),
+      y: H * (0.1 + Math.random() * 0.75),
+      size: easy ? 13 + Math.random() * 9 : medium ? 15 + Math.random() * 12 : 18 + Math.random() * 14,
+      type,
+      vx: Math.cos(angle) * speedVar,
+      vy: Math.sin(angle) * speedVar,
+      phase: Math.random() * Math.PI * 2,
+      frozen: 0,
+      homing
+    });
+  }
+
+  state.levelClearing = false;
+}
+
+// ─── SPAWN PARTICLE ─────────────────────────────────────────
+function spawnParticles(x, y, color, count = 8) {
+  for (let i = 0; i < count; i++) {
+    const angle = (i / count) * Math.PI * 2;
+    const speed = 80 + Math.random() * 80;
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = 6 + Math.random() * 8;
+    p.style.cssText = `
+      left:${x}px; top:${y}px;
+      width:${size}px; height:${size}px;
+      background:${color};
+      --tx:${Math.cos(angle)*speed}px;
+      --ty:${Math.sin(angle)*speed}px;
+      box-shadow: 0 0 6px ${color};
+    `;
+    document.getElementById('particles').appendChild(p);
+    setTimeout(() => p.remove(), 1000);
+  }
+}
+
+// ─── DRAW FUNCTIONS ──────────────────────────────────────────
+function drawOctopus(x, y, size, tentacles, frame) {
+  const lvl = gameState.level;
+  if (lvl <= 4) drawGrumpyOctopus(x, y, size, tentacles, frame);
+  else drawDrippedOctopus(x, y, size, tentacles, frame);
+}
+
+function drawGrumpyOctopus(x, y, size, tentacles, frame) {
+  ctx.save();
+  ctx.translate(x, y);
+  const bob = Math.sin(frame * 0.05) * 3;
+  ctx.translate(0, bob);
+
+  // Glow — lavender
+  const grd = ctx.createRadialGradient(0,0,0,0,0,size*2.2);
+  grd.addColorStop(0,'rgba(180,130,220,0.25)'); grd.addColorStop(1,'transparent');
+  ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(0,0,size*2.2,0,Math.PI*2); ctx.fill();
+
+  // Tentacles — purple to teal tips
+  const allAngles=[200,220,240,260,280,300,320,340];
+  for(let i=0;i<tentacles;i++){
+    const a=(allAngles[i]*Math.PI)/180, wave=Math.sin(frame*0.07+i*0.8)*10;
+    const tg=ctx.createLinearGradient(Math.cos(a)*size*0.5,Math.sin(a)*size*0.5,Math.cos(a)*size*2,Math.sin(a)*size*2);
+    tg.addColorStop(0,'#9b6fd4'); tg.addColorStop(0.6,'#7c3aab'); tg.addColorStop(1,'#7ecec4');
+    ctx.strokeStyle=tg; ctx.lineWidth=5; ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a)*size*0.5,Math.sin(a)*size*0.5);
+    ctx.bezierCurveTo(Math.cos(a)*size*1.1+wave,Math.sin(a)*size*1.1,Math.cos(a)*size*1.6+wave*1.3,Math.sin(a)*size*1.6+wave*0.5,Math.cos(a)*size*2+wave*0.8,Math.sin(a)*size*2+wave);
+    ctx.stroke();
+    ctx.strokeStyle='#7ecec4'; ctx.lineWidth=2.5;
+    ctx.beginPath(); ctx.arc(Math.cos(a)*size*2+wave*0.8,Math.sin(a)*size*2+wave,size*0.18,0,Math.PI*1.5); ctx.stroke();
+  }
+
+  // Body — lavender/purple squarish
+  const bg=ctx.createRadialGradient(-size*0.15,-size*0.3,0,0,size*0.1,size*1.1);
+  bg.addColorStop(0,'#c9a0e8'); bg.addColorStop(0.4,'#a87ac8'); bg.addColorStop(0.8,'#8b5cb0'); bg.addColorStop(1,'#6d3d9a');
+  ctx.fillStyle=bg; ctx.beginPath();
+  ctx.roundRect(-size*0.72,-size*1.1,size*1.44,size*1.5,[size*0.5,size*0.5,size*0.3,size*0.3]); ctx.fill();
+
+  // Blush
+  ctx.fillStyle='rgba(255,150,180,0.35)';
+  ctx.beginPath(); ctx.ellipse(-size*0.38,size*0.05,size*0.22,size*0.14,-0.2,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(size*0.38,size*0.05,size*0.22,size*0.14,0.2,0,Math.PI*2); ctx.fill();
+
+  // Freckles
+  ctx.fillStyle='rgba(120,60,140,0.7)';
+  [[-0.25,-0.75],[0,-0.85],[0.25,-0.75]].forEach(([fx,fy])=>{ctx.beginPath();ctx.arc(fx*size,fy*size,size*0.04,0,Math.PI*2);ctx.fill();});
+
+  // Eyes — white base
+  ctx.fillStyle='#e8d5f5';
+  ctx.beginPath(); ctx.ellipse(-size*0.26,-size*0.32,size*0.2,size*0.22,0,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(size*0.26,-size*0.32,size*0.2,size*0.22,0,0,Math.PI*2); ctx.fill();
+  // Droopy lids
+  ctx.fillStyle='#9b6fd4';
+  ctx.beginPath(); ctx.ellipse(-size*0.26,-size*0.42,size*0.22,size*0.13,0.15,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(size*0.26,-size*0.42,size*0.22,size*0.13,-0.15,0,Math.PI*2); ctx.fill();
+  // Pupils
+  ctx.fillStyle='#2d1854';
+  ctx.beginPath(); ctx.arc(-size*0.26,-size*0.3,size*0.1,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(size*0.26,-size*0.3,size*0.1,0,Math.PI*2); ctx.fill();
+  // Shine
+  ctx.fillStyle='rgba(255,255,255,0.85)';
+  ctx.beginPath(); ctx.arc(-size*0.21,-size*0.36,size*0.045,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(size*0.31,-size*0.36,size*0.045,0,Math.PI*2); ctx.fill();
+  // Grumpy mouth
+  ctx.strokeStyle='#7c4fa0'; ctx.lineWidth=2.5; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(-size*0.15,size*0.12); ctx.lineTo(size*0.15,size*0.12); ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawDrippedOctopus(x, y, size, tentacles, frame) {
+  ctx.save();
+  ctx.translate(x, y);
+  const bob = Math.sin(frame * 0.05) * 3;
+  ctx.translate(0, bob);
+
+  // Glow — pink
+  const grd=ctx.createRadialGradient(0,0,0,0,0,size*2.2);
+  grd.addColorStop(0,'rgba(255,150,160,0.28)'); grd.addColorStop(1,'transparent');
+  ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(0,0,size*2.2,0,Math.PI*2); ctx.fill();
+
+  // Tentacles — coral pink
+  const allAngles=[200,220,240,260,280,300,320,340];
+  for(let i=0;i<tentacles;i++){
+    const a=(allAngles[i]*Math.PI)/180, wave=Math.sin(frame*0.07+i*0.8)*10;
+    const tg=ctx.createLinearGradient(Math.cos(a)*size*0.5,Math.sin(a)*size*0.5,Math.cos(a)*size*2,Math.sin(a)*size*2);
+    tg.addColorStop(0,'#e8748a'); tg.addColorStop(0.5,'#d45870'); tg.addColorStop(1,'#c04060');
+    ctx.strokeStyle=tg; ctx.lineWidth=5; ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a)*size*0.5,Math.sin(a)*size*0.5);
+    ctx.bezierCurveTo(Math.cos(a)*size*1.1+wave,Math.sin(a)*size*1.1,Math.cos(a)*size*1.6+wave*1.3,Math.sin(a)*size*1.6+wave*0.5,Math.cos(a)*size*2+wave*0.8,Math.sin(a)*size*2+wave);
+    ctx.stroke();
+    ctx.strokeStyle='#ff8fa0'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(Math.cos(a)*size*2+wave*0.8,Math.sin(a)*size*2+wave,size*0.18,0,Math.PI*1.5); ctx.stroke();
+  }
+
+  // Body — pink/salmon
+  const bg=ctx.createRadialGradient(-size*0.1,-size*0.3,0,0,0,size*1.1);
+  bg.addColorStop(0,'#f0a0b0'); bg.addColorStop(0.4,'#d97088'); bg.addColorStop(1,'#b85070');
+  ctx.fillStyle=bg; ctx.beginPath(); ctx.roundRect(-size*0.65,-size*0.9,size*1.3,size*1.3,size*0.45); ctx.fill();
+
+  // Black tee
+  ctx.fillStyle='#1a1a2e';
+  ctx.beginPath(); ctx.roundRect(-size*0.6,size*0.05,size*1.2,size*0.55,[0,0,size*0.3,size*0.3]); ctx.fill();
+  ctx.fillStyle='#00ff88'; ctx.font=`bold ${size*0.13}px 'Orbitron',monospace`; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('LnF0',0,size*0.32);
+
+  // Gold bandana with ₿
+  ctx.fillStyle='#f5a623';
+  ctx.beginPath(); ctx.roundRect(-size*0.6,-size*0.18,size*1.2,size*0.32,size*0.12); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.font=`${size*0.18}px serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('₿',-size*0.3,-size*0.04); ctx.fillText('₿',size*0.3,-size*0.04);
+
+  // Sunglasses
+  const sg=ctx.createLinearGradient(-size*0.5,-size*0.5,size*0.5,-size*0.3);
+  sg.addColorStop(0,'#1a1a2e'); sg.addColorStop(0.5,'#2d2d4e'); sg.addColorStop(1,'#1a1a2e');
+  ctx.fillStyle=sg;
+  ctx.beginPath(); ctx.roundRect(-size*0.55,-size*0.62,size*0.48,size*0.28,size*0.1); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(size*0.07,-size*0.62,size*0.48,size*0.28,size*0.1); ctx.fill();
+  ctx.fillStyle='#111'; ctx.fillRect(-size*0.07,-size*0.52,size*0.14,size*0.06);
+  ctx.fillStyle='rgba(255,255,255,0.12)';
+  ctx.beginPath(); ctx.roundRect(-size*0.52,-size*0.6,size*0.2,size*0.1,size*0.05); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(size*0.1,-size*0.6,size*0.2,size*0.1,size*0.05); ctx.fill();
+
+  // Cap
+  ctx.fillStyle='#111122';
+  ctx.beginPath(); ctx.ellipse(0,-size*0.72,size*0.78,size*0.14,0,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(-size*0.62,-size*1.18,size*1.24,size*0.52,[size*0.4,size*0.4,0,0]); ctx.fill();
+  const capColors=['#ff3333','#33ff33','#3333ff','#ffff33'];
+  ctx.font=`bold ${size*0.14}px 'Orbitron',monospace`; ctx.textBaseline='middle';
+  ['L','n','F','0'].forEach((ch,i)=>{ctx.fillStyle=capColors[i];ctx.textAlign='center';ctx.fillText(ch,-size*0.22+i*size*0.15,-size*0.96);});
+
+  // Gold chain
+  ctx.strokeStyle='#ffd700'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(-size*0.35,-size*0.05); ctx.bezierCurveTo(-size*0.2,size*0.15,size*0.2,size*0.15,size*0.35,-size*0.05); ctx.stroke();
+
+  ctx.restore();
+}
+
+function _oldOctopusUnused(x, y, size, tentacles, frame) {
+  ctx.save();
+  ctx.translate(x, y);
+  const bob = Math.sin(frame * 0.05) * 3;
+  ctx.translate(0, bob);
+
+  // Glow
+  const grd = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 2);
+  grd.addColorStop(0, 'rgba(124,58,237,0.3)');
+  grd.addColorStop(1, 'rgba(124,58,237,0)');
+  ctx.fillStyle = grd;
+  ctx.beginPath();
+  ctx.arc(0, 0, size * 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Tentacles (only draw found ones)
+  const allAngles = [210, 230, 250, 270, 290, 310, 330, 350];
+  for (let i = 0; i < tentacles; i++) {
+    const angle = (allAngles[i] * Math.PI) / 180;
+    const wave = Math.sin(frame * 0.08 + i) * 8;
+    ctx.strokeStyle = '#7c3aed';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(angle) * size * 0.6, Math.sin(angle) * size * 0.6);
+    ctx.quadraticCurveTo(
+      Math.cos(angle) * size * 1.4 + wave,
+      Math.sin(angle) * size * 1.4,
+      Math.cos(angle) * size * 1.9 + wave * 1.5,
+      Math.sin(angle) * size * 1.9
+    );
+    ctx.stroke();
+  }
+
+  // Body
+  const bodyGrd = ctx.createRadialGradient(-size*0.2, -size*0.2, 0, 0, 0, size);
+  bodyGrd.addColorStop(0, '#a78bfa');
+  bodyGrd.addColorStop(0.5, '#7c3aed');
+  bodyGrd.addColorStop(1, '#4c1d95');
+  ctx.fillStyle = bodyGrd;
+  ctx.beginPath();
+  ctx.ellipse(0, -size * 0.1, size * 0.75, size, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Eyes
+  ctx.fillStyle = 'white';
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.25, -size * 0.15, size * 0.18, size * 0.2, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(size * 0.25, -size * 0.15, size * 0.18, size * 0.2, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Pupils
+  ctx.fillStyle = '#1e1b4b';
+  ctx.beginPath();
+  ctx.arc(-size * 0.25, -size * 0.15, size * 0.09, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(size * 0.25, -size * 0.15, size * 0.09, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Eye shine
+  ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  ctx.beginPath();
+  ctx.arc(-size * 0.21, -size * 0.2, size * 0.04, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(size * 0.29, -size * 0.2, size * 0.04, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawFood(food, frame) {
+  if (food.collected) return;
+  ctx.save();
+  ctx.translate(food.x, food.y);
+  const bob = Math.sin(frame * 0.06 + food.wobble) * 5;
+  ctx.translate(0, bob);
+
+  // Glow
+  const grd = ctx.createRadialGradient(0, 0, 0, 0, 0, food.size * 2);
+  grd.addColorStop(0, 'rgba(255,107,53,0.4)');
+  grd.addColorStop(1, 'transparent');
+  ctx.fillStyle = grd;
+  ctx.beginPath();
+  ctx.arc(0, 0, food.size * 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.font = `${food.size * 1.8}px serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('🦐', 0, 0);
+  ctx.restore();
+}
+
+function drawObstacle(obs, frame) {
+  ctx.save();
+  ctx.translate(obs.x, obs.y);
+
+  if (obs.type === 'net') {
+    ctx.strokeStyle = 'rgba(180,120,50,0.8)';
+    ctx.lineWidth = 2;
+    const s = obs.size;
+    for (let i = -s; i <= s; i += 10) {
+      ctx.beginPath();
+      ctx.moveTo(i, -s);
+      ctx.lineTo(i, s);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-s, i);
+      ctx.lineTo(s, i);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(180,120,50,0.4)';
+    ctx.strokeRect(-s, -s, s*2, s*2);
+  } else if (obs.type === 'predator') {
+    ctx.font = `${obs.size * 1.8}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const angle = Math.atan2(obs.vy, obs.vx);
+    ctx.rotate(angle + Math.PI / 2);
+    ctx.fillText('🦈', 0, 0);
+  } else {
+    // current
+    const pulse = Math.sin(frame * 0.1 + obs.phase) * 0.4 + 0.6;
+    ctx.strokeStyle = `rgba(0,229,255,${pulse * 0.7})`;
+    ctx.lineWidth = 3;
+    for (let i = 0; i < 5; i++) {
+      const offset = (i - 2) * 10;
+      ctx.beginPath();
+      ctx.moveTo(-obs.size, offset);
+      ctx.bezierCurveTo(
+        -obs.size/2, offset - 10,
+        obs.size/2, offset + 10,
+        obs.size, offset
+      );
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+function drawTentacleItem(item, frame, locked) {
+  if (!item) return;
+  item.glow = (item.glow + 0.04) % (Math.PI * 2);
+  const pulse = Math.sin(item.glow) * 0.5 + 0.5;
+
+  ctx.save();
+  ctx.translate(item.x, item.y);
+
+  if (locked) {
+    // Locked — grey and pulsing warning ring
+    ctx.globalAlpha = 0.4;
+    ctx.strokeStyle = `rgba(255,255,255,0.3)`;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath();
+    ctx.arc(0, 0, item.size * 2, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.font = `${item.size * 2}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🔒', 0, 0);
+    ctx.globalAlpha = 1;
+  } else {
+    // Unlocked — glowing
+    ctx.strokeStyle = `rgba(0,255,136,${0.3 + pulse * 0.4})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, item.size * 1.8 + pulse * 8, 0, Math.PI * 2);
+    ctx.stroke();
+
+    const grd = ctx.createRadialGradient(0,0,0,0,0,item.size*2.5);
+    grd.addColorStop(0, `rgba(0,255,136,${0.3 * pulse})`);
+    grd.addColorStop(1, 'transparent');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(0, 0, item.size*2.5, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.font = `${item.size * 2}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('💜', 0, 0);
+  }
+
+  ctx.restore();
+}
+
+function drawHP(hp) {
+  // legacy — replaced by drawHUD
+}
+
+function drawBackground(frame) {
+  // Ocean floor hint
+  const floorGrd = ctx.createLinearGradient(0, canvas.height * 0.8, 0, canvas.height);
+  floorGrd.addColorStop(0, 'transparent');
+  floorGrd.addColorStop(1, 'rgba(0,20,60,0.6)');
+  ctx.fillStyle = floorGrd;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Floating particles
+  ctx.fillStyle = 'rgba(0,229,255,0.15)';
+  for (let i = 0; i < 20; i++) {
+    const x = ((i * 137 + frame * 0.3) % canvas.width);
+    const y = ((i * 97 + frame * 0.2) % canvas.height);
+    ctx.beginPath();
+    ctx.arc(x, y, 1.5, 0, Math.PI*2);
+    ctx.fill();
+  }
+}
+
+// ─── GAME LOOP ───────────────────────────────────────────────
+function gameLoop() {
+  const s = gameState;
+  const W = canvas.width, H = canvas.height;
+  s.frame++;
+
+  // Clear
+  ctx.clearRect(0, 0, W, H);
+  drawBackground(s.frame);
+
+  if (!s.levelClearing) {
+
+    // ── TIMER ──
+    if (s.frame % 60 === 0 && s.timeLeft > 0) {
+      s.timeLeft--;
+      if (s.timeLeft <= 0) { showGameOver('TIME\'S UP'); return; }
+    }
+
+    // ── PLAYER MOVEMENT ──
+    const speed = 3.8 + s.tentacles * 0.2;
+    const drag = 0.82;
+
+    if (touch.active) {
+      // Drag: smoothly pull octopus toward finger position
+      const dx = touch.x - s.player.x;
+      const dy = touch.y - s.player.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist > 6) {
+        const pull = Math.min(dist * 0.18, speed);
+        s.player.vx += (dx / dist) * pull;
+        s.player.vy += (dy / dist) * pull;
+      }
+    } else {
+      // Keyboard fallback for desktop
+      if (keys.left)  s.player.vx -= speed * 0.22;
+      if (keys.right) s.player.vx += speed * 0.22;
+      if (keys.up)    s.player.vy -= speed * 0.22;
+      if (keys.down)  s.player.vy += speed * 0.22;
+    }
+
+    s.player.vx *= drag;
+    s.player.vy *= drag;
+
+    const spd = Math.sqrt(s.player.vx**2 + s.player.vy**2);
+    if (spd > speed) { s.player.vx = s.player.vx/spd*speed; s.player.vy = s.player.vy/spd*speed; }
+
+    s.player.x = Math.max(s.player.size, Math.min(W - s.player.size, s.player.x + s.player.vx));
+    s.player.y = Math.max(s.player.size + 60, Math.min(H - s.player.size - 80, s.player.y + s.player.vy));
+
+    if (s.player.invincible > 0) s.player.invincible--;
+    if (s.player.inkCooldown > 0) s.player.inkCooldown--;
+
+    // ── INK CLOUDS decay ──
+    s.inkClouds = s.inkClouds.filter(c => s.frame - c.born < 180);
+
+    // ── OBSTACLES ──
+    let dead = false;
+    s.obstacles.forEach(obs => {
+      if (obs.frozen > 0) { obs.frozen--; return; }
+
+      // Homing predators
+      if (obs.homing) {
+        const dx = s.player.x - obs.x;
+        const dy = s.player.y - obs.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        const homingForce = 0.04 + s.level * 0.008;
+        obs.vx += (dx / dist) * homingForce * (s.level * 0.5);
+        obs.vy += (dy / dist) * homingForce * (s.level * 0.5);
+        // Cap homing speed
+        const ospd = Math.sqrt(obs.vx**2 + obs.vy**2);
+        const maxSpd = 2.5 + s.level * 0.4;
+        if (ospd > maxSpd) { obs.vx = obs.vx/ospd*maxSpd; obs.vy = obs.vy/ospd*maxSpd; }
+      }
+
+      obs.x += obs.vx;
+      obs.y += obs.vy;
+      if (obs.x < 20 || obs.x > W - 20) obs.vx *= -1;
+      if (obs.y < 80 || obs.y > H - 80) obs.vy *= -1;
+
+      if (dead) return;
+
+      // 1-HIT KILL collision
+      const dx = s.player.x - obs.x;
+      const dy = s.player.y - obs.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < s.player.size * 0.7 + obs.size * 0.55 && s.player.invincible <= 0) {
+        s.player.hp--;
+        spawnParticles(s.player.x, s.player.y, '#ff2d55', 10);
+        if (s.player.hp <= 0) {
+          dead = true;
+          cancelAnimationFrame(s.animFrame);
+          setTimeout(() => showGameOver('CAUGHT'), 300);
+        } else {
+          // Still alive — grant invincibility frames & knockback
+          s.player.invincible = 90;
+          s.player.vx = (dx / dist) * 10;
+          s.player.vy = (dy / dist) * 10;
+          updateHUD();
+        }
+      }
+    });
+    if (dead) {
+      drawObstacles(); drawFoods(); drawTentacle(); drawPlayer(); drawHUD();
+      return;
+    }
+
+    // ── FOOD ──
+    s.foods.forEach(food => {
+      if (food.collected) return;
+      const dx = s.player.x - food.x;
+      const dy = s.player.y - food.y;
+      if (Math.sqrt(dx*dx + dy*dy) < s.player.size + food.size) {
+        food.collected = true;
+        s.score += 50 + s.level * 15;
+        spawnParticles(food.x, food.y, '#ff6b35', 10);
+        updateHUD();
+        // Check if all food eaten → unlock tentacle
+        if (s.foods.every(f => f.collected)) {
+          s.tentacleLocked = false;
+          spawnParticles(s.tentacleItem.x, s.tentacleItem.y, '#00ff88', 20);
+        }
+      }
+    });
+
+    // ── TENTACLE ITEM (only if unlocked) ──
+    if (s.tentacleItem && !s.tentacleLocked) {
+      const dx = s.player.x - s.tentacleItem.x;
+      const dy = s.player.y - s.tentacleItem.y;
+      if (Math.sqrt(dx*dx + dy*dy) < s.player.size + s.tentacleItem.size) {
+        s.levelClearing = true;
+        s.tentacles++;
+        s.score += 300 + s.level * 80 + s.timeLeft * 10;
+        spawnParticles(s.tentacleItem.x, s.tentacleItem.y, '#00ff88', 20);
+        spawnParticles(s.player.x, s.player.y, '#7c3aed', 16);
+        updateHUD();
+        setTimeout(() => showLevelClear(), 600);
+      }
+    }
+  }
+
+  // ── DRAW ──
+  drawObstacles(); drawFoods(); drawTentacle(); drawPlayer(); drawDragIndicator(); drawHUD();
+
+  s.animFrame = requestAnimationFrame(gameLoop);
+}
+
+function drawObstacles() {
+  gameState.obstacles.forEach(obs => drawObstacle(obs, gameState.frame));
+  // Ink clouds
+  gameState.inkClouds.forEach(c => {
+    const age = gameState.frame - c.born;
+    const alpha = Math.max(0, 0.5 - age / 360);
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    const grd = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.r);
+    grd.addColorStop(0, 'rgba(40,0,80,0.9)');
+    grd.addColorStop(1, 'transparent');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, c.r, 0, Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  });
+}
+
+function drawFoods() {
+  gameState.foods.forEach(food => drawFood(food, gameState.frame));
+}
+
+function drawTentacle() {
+  drawTentacleItem(gameState.tentacleItem, gameState.frame, gameState.tentacleLocked);
+}
+
+function drawPlayer() {
+  const s = gameState;
+  // Flicker when just hit
+  if (s.player.invincible > 0 && s.frame % 6 < 3) return;
+  drawOctopus(s.player.x, s.player.y, s.player.size, s.tentacles, s.frame);
+}
+
+function drawHUD() {
+  const s = gameState;
+  const easy = s.level <= 4, hard = s.level >= 7;
+
+  // Timer
+  const t = s.timeLeft;
+  const timerColor = t <= 5 ? '#ff2d55' : t <= 10 ? '#ffd700' : '#00e5ff';
+  ctx.font = `bold 15px 'Orbitron', monospace`;
+  ctx.fillStyle = timerColor;
+  ctx.textAlign = 'center';
+  ctx.fillText(`⏱ ${t}s`, canvas.width / 2, 36);
+  if (t <= 5 && s.frame % 30 < 15) {
+    ctx.fillStyle = 'rgba(255,45,85,0.15)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  // Difficulty badge
+  const tierLabel = easy ? '🟢 EASY' : hard ? '🔴 HARD' : '🟡 MEDIUM';
+  ctx.font = `10px 'Exo 2', sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.textAlign = 'center';
+  ctx.fillText(tierLabel, canvas.width / 2, 52);
+
+  // Food remaining
+  const remaining = s.foods.filter(f => !f.collected).length;
+  ctx.font = `12px 'Exo 2', sans-serif`;
+  ctx.fillStyle = remaining > 0 ? 'rgba(255,255,255,0.5)' : '#00ff88';
+  ctx.textAlign = 'left';
+  ctx.fillText(remaining > 0 ? `🦐 ${remaining} left` : '💜 GRAB IT!', 16, canvas.height - 40);
+
+  // Ink cooldown
+  if (s.player.inkCooldown > 0) {
+    ctx.fillStyle = 'rgba(100,0,160,0.6)';
+    ctx.font = `11px 'Exo 2', sans-serif`;
+    ctx.fillText(`🖤 INK ${Math.ceil(s.player.inkCooldown/60)}s`, 16, canvas.height - 56);
+  } else {
+    ctx.fillStyle = 'rgba(180,100,255,0.8)';
+    ctx.font = `11px 'Exo 2', sans-serif`;
+    ctx.fillText('🖤 INK READY', 16, canvas.height - 56);
+  }
+
+  // HP hearts
+  ctx.textAlign = 'right';
+  ctx.font = '16px serif';
+  const maxHp = easy ? 3 : hard ? 1 : 2;
+  for (let i = 0; i < maxHp; i++) {
+    ctx.fillText(i < s.player.hp ? '💜' : '🖤', canvas.width - 16 - i * 22, canvas.height - 20);
+  }
+}
+
+// ─── INK BLAST ───────────────────────────────────────────────
+function fireInk() {
+  const s = gameState;
+  if (s.player.inkCooldown > 0 || s.levelClearing) return;
+  s.player.inkCooldown = 300; // 5 second cooldown
+
+  const inkRadius = 120;
+  s.inkClouds.push({ x: s.player.x, y: s.player.y, r: inkRadius, born: s.frame });
+
+  // Freeze nearby obstacles for 3 seconds
+  s.obstacles.forEach(obs => {
+    const dx = obs.x - s.player.x;
+    const dy = obs.y - s.player.y;
+    if (Math.sqrt(dx*dx + dy*dy) < inkRadius) {
+      obs.frozen = 180;
+    }
+  });
+  spawnParticles(s.player.x, s.player.y, '#4c1d95', 12);
+}
+
+// Spacebar ink
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space') { e.preventDefault(); fireInk(); }
+});
+
+// ─── TOUCH DRAG CONTROLS ────────────────────────────────────
+let lastTap = 0;
+const touch = { active: false, x: 0, y: 0 };
+
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const now = Date.now();
+  // Double-tap = ink
+  if (now - lastTap < 300) { fireInk(); lastTap = 0; return; }
+  lastTap = now;
+  const t = e.touches[0];
+  touch.active = true;
+  touch.x = t.clientX;
+  touch.y = t.clientY;
+}, { passive: false });
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (!touch.active) return;
+  const t = e.touches[0];
+  touch.x = t.clientX;
+  touch.y = t.clientY;
+}, { passive: false });
+
+canvas.addEventListener('touchend', e => {
+  e.preventDefault();
+  touch.active = false;
+}, { passive: false });
+
+// Draw a subtle finger-trail ring when dragging
+function drawDragIndicator() {
+  if (!touch.active) return;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0,229,255,0.2)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 6]);
+  ctx.beginPath();
+  ctx.arc(touch.x, touch.y, 22, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+function updateHUD() {
+  const s = gameState;
+  document.getElementById('levelVal').textContent = String(s.level).padStart(2, '0');
+  document.getElementById('scoreVal').textContent = s.score;
+
+  const hud = document.getElementById('tentaclesHud');
+  hud.innerHTML = '';
+  for (let i = 0; i < 8; i++) {
+    const p = document.createElement('div');
+    p.className = 't-pip' + (i < s.tentacles ? ' active' : '');
+    hud.appendChild(p);
+  }
+}
+
+// ─── SCREEN FLOWS ───────────────────────────────────────────
+function startGame() {
+  gameState = initState();
+  generateLevel(gameState);
+  document.getElementById('titleScreen').classList.remove('active');
+  document.getElementById('gameScreen').classList.add('active');
+  updateHUD();
+  gameLoop();
+}
+
+function showLevelClear() {
+  if (gameState.tentacles >= 8) {
+    cancelAnimationFrame(gameState.animFrame);
+    document.getElementById('winScreen').classList.add('show');
+    return;
+  }
+  const emojis = ['💜','✨','🌊','⭐','💫','🔮','🌀','🎯'];
+  document.getElementById('clearEmoji').textContent = emojis[gameState.tentacles - 1] || '✨';
+  document.getElementById('clearTitle').textContent = `TENTACLE ${gameState.tentacles} FOUND!`;
+  document.getElementById('clearSub').innerHTML = 
+    `<span>${gameState.tentacles}/8</span> tentacles recovered.<br>Score: <span>${gameState.score}</span><br>Dive deeper into the abyss.`;
+  document.getElementById('levelClear').classList.add('show');
+}
+
+function showGameOver(reason = 'CAUGHT') {
+  cancelAnimationFrame(gameState.animFrame);
+  document.getElementById('gameOverSub').innerHTML = 
+    `<span>${reason}</span> on level ${gameState.level}.<br>Score: <span>${gameState.score}</span><br>The deep took you. Rise again.`;
+  document.getElementById('gameOver').classList.add('show');
+}
+
+function nextLevel() {
+  document.getElementById('levelClear').classList.remove('show');
+  gameState.level++;
+  generateLevel(gameState);
+  updateHUD();
+  if (gameState.animFrame) cancelAnimationFrame(gameState.animFrame);
+  gameLoop();
+}
+
+function restartGame() {
+  document.getElementById('gameOver').classList.remove('show');
+  document.getElementById('winScreen').classList.remove('show');
+  if (gameState.animFrame) cancelAnimationFrame(gameState.animFrame);
+  startGame();
+}
+
+function goTitle() {
+  document.getElementById('gameOver').classList.remove('show');
+  if (gameState.animFrame) cancelAnimationFrame(gameState.animFrame);
+  document.getElementById('gameScreen').classList.remove('active');
+  document.getElementById('titleScreen').classList.add('active');
+  renderTitleTentacles(0);
+}
+</script>
+
+</body>
+</html>
