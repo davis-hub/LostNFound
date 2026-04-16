@@ -84,7 +84,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
 .ov-sub{font-size:13px;color:rgba(255,255,255,.6);text-align:center;line-height:1.7;}
 .ov-sub span{color:var(--glow);font-weight:600;}
 /* ── LB ── */
-.lb-list{width:100%;max-width:300px;}
+.lb-list{width:100%;max-width:320px;max-height:55vh;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(0,229,255,.3) transparent;}
 .lb-row{display:flex;justify-content:space-between;align-items:center;padding:6px 13px;border-bottom:1px solid rgba(255,255,255,.07);font-size:13px;}
 .lb-row:first-child{background:rgba(255,215,0,.08);}
 .lb-rank{color:var(--gold);font-family:'Orbitron',monospace;font-size:10px;width:26px;}
@@ -346,67 +346,105 @@ function showCharSelect(){checkUnlockSecret();hideAll();document.getElementById(
 function startFromCharSelect(){showCutscene(STORIES[0],()=>startGame());}
 
 // ══ LEADERBOARD — SUPABASE GLOBAL ═══════════════════════════
-// HOW TO SET UP (one time, 5 minutes, completely free):
-// 1. Go to https://supabase.com → New project (free tier)
-// 2. Go to SQL Editor → run this:
-//    CREATE TABLE lnf0_scores (
-//      id SERIAL PRIMARY KEY,
-//      name TEXT NOT NULL,
-//      score INTEGER NOT NULL,
-//      level INTEGER NOT NULL,
-//      created_at TIMESTAMP DEFAULT NOW()
-//    );
-//    ALTER TABLE lnf0_scores ENABLE ROW LEVEL SECURITY;
-//    CREATE POLICY "Anyone can read" ON lnf0_scores FOR SELECT USING (true);
-//    CREATE POLICY "Anyone can insert" ON lnf0_scores FOR INSERT WITH CHECK (true);
-// 3. Go to Settings → API → copy Project URL and anon public key
-// 4. Paste them into SUPABASE_URL and SUPABASE_KEY below
+// ── ONE-TIME SETUP (5 minutes, free): ────────────────────────
+// 1. supabase.com → New project
+// 2. SQL Editor → run:
+//
+//   DROP TABLE IF EXISTS lnf0_scores;
+//   CREATE TABLE lnf0_scores (
+//     name TEXT PRIMARY KEY,
+//     score INTEGER NOT NULL,
+//     level INTEGER NOT NULL,
+//     updated_at TIMESTAMP DEFAULT NOW()
+//   );
+//   ALTER TABLE lnf0_scores ENABLE ROW LEVEL SECURITY;
+//   CREATE POLICY "read" ON lnf0_scores FOR SELECT USING (true);
+//   CREATE POLICY "insert" ON lnf0_scores FOR INSERT WITH CHECK (true);
+//   CREATE POLICY "update" ON lnf0_scores FOR UPDATE USING (true);
+//
+//   -- Guard: only update if new score is strictly higher
+//   CREATE OR REPLACE FUNCTION guard_score_update()
+//   RETURNS TRIGGER AS $$
+//   BEGIN
+//     IF EXISTS (
+//       SELECT 1 FROM lnf0_scores
+//       WHERE name = NEW.name AND score >= NEW.score
+//     ) THEN RETURN NULL; END IF;
+//     RETURN NEW;
+//   END;
+//   $$ LANGUAGE plpgsql;
+//   CREATE TRIGGER score_guard BEFORE INSERT ON lnf0_scores
+//   FOR EACH ROW EXECUTE FUNCTION guard_score_update();
+//
+// 3. Settings → API → copy URL + anon key → paste below
 
-const SUPABASE_URL = 'https://xolxcdbquvfmhxekiayl.supabase.co';   // ← paste here
-const SUPABASE_KEY = 'sb_publishable_O01oJ9Y8UeIMBcObol_VUA_VVZGkUua'; // ← paste here
+const SUPABASE_URL = 'https://xolxcdbquvfmhxekiayl.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_O01oJ9Y8UeIMBcObol_VUA_VVZGkUua';
 const SB_READY = SUPABASE_URL !== 'YOUR_SUPABASE_URL';
 
-// Local backup always — scores never lost even if network fails
-function getLocalScores(){try{return JSON.parse(localStorage.getItem('lnf0_lb')||'[]');}catch{return[];}}
-function putLocalScores(a){try{localStorage.setItem('lnf0_lb',JSON.stringify(a));}catch{}}
+// ── Local fallback ────────────────────────────────────────────
+function getLocalScores(){
+  try{
+    const raw=JSON.parse(localStorage.getItem('lnf0_lb')||'[]');
+    // Keep only best score per name locally too
+    const best={};
+    raw.forEach(s=>{
+      const k=(s.name||'ANON').toUpperCase();
+      if(!best[k]||Number(s.score)>Number(best[k].score)) best[k]=s;
+    });
+    return Object.values(best).sort((a,b)=>Number(b.score)-Number(a.score));
+  }catch{return[];}
+}
+function putLocalScores(rows){try{localStorage.setItem('lnf0_lb',JSON.stringify(rows));}catch{}}
+function cleanName(n){return(n||'').replace(/[^a-zA-Z0-9_\- ]/g,'').trim().slice(0,14).toUpperCase()||'ANON';}
 
-// Sanitise name — strip anything that could cause issues
-function cleanName(n){return(n||'').replace(/[^a-zA-Z0-9_\- ]/g,'').trim().slice(0,12).toUpperCase()||'ANON';}
-
-// Fetch top 20 scores from Supabase, fall back to local
+// ── Fetch — deduplicate by name client-side, return top 50 ───
 async function fetchGlobalScores(){
   if(!SB_READY) return getLocalScores();
   try{
+    // Fetch 500 rows then deduplicate — works without a DB view
     const r=await fetch(
-      `${SUPABASE_URL}/rest/v1/lnf0_scores?select=name,score,level&order=score.desc&limit=20`,
+      `${SUPABASE_URL}/rest/v1/lnf0_scores?select=name,score,level&order=score.desc&limit=500`,
       {headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`},
-       signal:AbortSignal.timeout(5000)}
+       signal:AbortSignal.timeout(6000)}
     );
-    if(!r.ok) throw new Error('fetch failed');
+    if(!r.ok) throw new Error(`${r.status}`);
     const rows=await r.json();
-    // Also save locally as backup
-    putLocalScores(rows);
-    return rows;
+    // One entry per player — highest score wins
+    const best={};
+    rows.forEach(s=>{
+      const k=(s.name||'ANON').toUpperCase();
+      if(!best[k]||Number(s.score)>Number(best[k].score)) best[k]=s;
+    });
+    const clean=Object.values(best)
+      .sort((a,b)=>Number(b.score)-Number(a.score))
+      .slice(0,50);
+    putLocalScores(clean);
+    return clean;
   }catch(e){
-    console.warn('LB fetch failed, using local:',e.message);
+    console.warn('LB fetch failed:',e.message);
     return getLocalScores();
   }
 }
 
-// Push a single score row — Supabase inserts it, no read-modify-write needed
+// ── Push: upsert on name PRIMARY KEY, DB trigger blocks lower scores ──
 async function pushGlobalScore(name,score,level){
-  const entry={name:cleanName(name),score:Math.floor(Number(score)),level:Math.floor(Number(level))};
+  const nm=cleanName(name);
+  const entry={name:nm,score:Math.floor(Number(score)),level:Math.floor(Number(level))};
 
-  // Always save locally first so player never loses their score
+  // Update local — only replace if this score is better
   const local=getLocalScores();
-  local.push(entry);
-  local.sort((a,b)=>b.score-a.score);
-  putLocalScores(local.slice(0,20));
-
-  if(!SB_READY){
-    console.warn('Supabase not configured — score saved locally only');
-    return;
+  const idx=local.findIndex(s=>(s.name||'').toUpperCase()===nm);
+  if(idx>=0){
+    if(entry.score>Number(local[idx].score)) local[idx]=entry;
+    // else keep existing higher score — don't downgrade
+  } else {
+    local.push(entry);
   }
+  local.sort((a,b)=>Number(b.score)-Number(a.score));
+  putLocalScores(local.slice(0,50));
+
+  if(!SB_READY){console.warn('Supabase not set up — local only');return;}
   try{
     const r=await fetch(`${SUPABASE_URL}/rest/v1/lnf0_scores`,{
       method:'POST',
@@ -414,60 +452,60 @@ async function pushGlobalScore(name,score,level){
         'apikey':SUPABASE_KEY,
         'Authorization':`Bearer ${SUPABASE_KEY}`,
         'Content-Type':'application/json',
-        'Prefer':'return=minimal'
+        'Prefer':'resolution=merge-duplicates,return=minimal'
+        // merge-duplicates = upsert on PRIMARY KEY (name)
+        // DB trigger guard_score_update will silently reject if new score <= existing
       },
       body:JSON.stringify(entry),
-      signal:AbortSignal.timeout(6000)
+      signal:AbortSignal.timeout(7000)
     });
-    if(!r.ok) throw new Error(`insert failed: ${r.status}`);
+    if(!r.ok){const t=await r.text();throw new Error(`${r.status}: ${t}`);}
   }catch(e){
-    console.warn('LB push failed — score kept locally:',e.message);
+    console.warn('LB push failed, kept locally:',e.message);
   }
 }
 
 function getScores(){return getLocalScores();}
+
+// ── Render rows helper ────────────────────────────────────────
+function renderRows(rows){
+  let rank=1;
+  return rows.map((s,i)=>{
+    if(i>0&&Number(s.score)<Number(rows[i-1].score)) rank=i+1;
+    const medal=rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':`#${rank}`;
+    const badge=Number(s.level)>=8?'👑':Number(s.level)>=6?'🔥':'';
+    return `<div class="lb-row">
+      <span class="lb-rank">${medal}</span>
+      <span class="lb-name">${s.name}${badge?' '+badge:''}</span>
+      <span class="lb-score">${Number(s.score).toLocaleString()}</span>
+    </div>`;
+  }).join('');
+}
 
 async function showLB(){
   hideAll();document.getElementById('leaderboard').classList.add('show');
   const el=document.getElementById('lbList');
 
   if(!SB_READY){
-    el.innerHTML=`<div class="lb-row" style="justify-content:center;flex-direction:column;gap:6px;text-align:center;color:rgba(255,200,0,.8);font-size:11px;padding:12px">
-      ⚠️ SUPABASE NOT CONFIGURED YET<br>
-      <span style="color:rgba(255,255,255,.4);font-size:10px">Follow setup steps in the code comments<br>to enable the global leaderboard</span>
+    el.innerHTML=`<div class="lb-row" style="justify-content:center;flex-direction:column;gap:4px;text-align:center;color:rgba(255,200,0,.85);font-size:11px;padding:10px 0">
+      ⚠ SUPABASE NOT SET UP<br>
+      <span style="color:rgba(255,255,255,.35);font-size:10px">See code comments for setup</span>
     </div>`;
-    // Still show local scores if any
     const local=getLocalScores();
     if(local.length){
-      el.innerHTML+=`<div style="text-align:center;font-size:10px;color:rgba(255,255,255,.3);padding:4px 0">LOCAL SCORES (this device only)</div>`;
-      el.innerHTML+=local.map((s,i)=>{
-        const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`;
-        return `<div class="lb-row"><span class="lb-rank">${medal}</span><span class="lb-name">${s.name}</span><span class="lb-score">${Number(s.score).toLocaleString()}</span></div>`;
-      }).join('');
+      el.innerHTML+=`<div style="text-align:center;font-size:10px;color:rgba(255,255,255,.28);padding:3px 0 6px">LOCAL SCORES ONLY</div>`;
+      el.innerHTML+=renderRows(local);
     }
     return;
   }
 
-  el.innerHTML='<div class="lb-row" style="justify-content:center;color:rgba(0,229,255,.6);font-size:12px">🌊 Loading global scores...</div>';
+  el.innerHTML='<div class="lb-row" style="justify-content:center;color:rgba(0,229,255,.55);font-size:12px">🌊 Loading...</div>';
   const rows=await fetchGlobalScores();
-
   if(!rows.length){
     el.innerHTML='<div class="lb-row" style="justify-content:center;color:rgba(255,255,255,.4)">No scores yet — be first! 🐙</div>';
     return;
   }
-
-  // Proper dense ranking — same score = same rank, next rank skips
-  let rank=1;
-  el.innerHTML=rows.map((s,i)=>{
-    if(i>0&&Number(s.score)<Number(rows[i-1].score)) rank=i+1;
-    const medal=rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':`#${rank}`;
-    const lvlBadge=s.level>=8?'👑':s.level>=6?'🔥':'';
-    return `<div class="lb-row">
-      <span class="lb-rank">${medal}</span>
-      <span class="lb-name">${s.name} ${lvlBadge}</span>
-      <span class="lb-score">${Number(s.score).toLocaleString()}</span>
-    </div>`;
-  }).join('');
+  el.innerHTML=renderRows(rows);
 }
 
 function closeLB(){document.getElementById('leaderboard').classList.remove('show');document.getElementById('titleScreen').classList.add('active');}
@@ -475,9 +513,6 @@ function showNameEntry(){['gameOver','winScreen'].forEach(id=>document.getElemen
 async function saveScore(){
   const name=document.getElementById('nameInput').value;
   document.getElementById('nameEntry').classList.remove('show');
-  // Show saving state
-  const btn=document.querySelector('#nameEntry .big-btn');
-  if(btn)btn.textContent='SAVING...';
   await pushGlobalScore(name,gameState.score,gameState.level);
   showLB();
 }
