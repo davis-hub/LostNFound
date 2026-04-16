@@ -148,7 +148,17 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
       <div class="char-name">DRIPPED</div>
       <div class="char-desc">Pink · cap & shades<br>Bitcoin bandana<br>Gold chain</div>
     </div>
-    <div class="char-card locked-card" id="card2">
+    <div class="char-card" id="card2" onclick="selectChar(2)">
+      <div class="octo-big">🧔</div>
+      <div class="char-name">BREY</div>
+      <div class="char-desc">Tan · orange shades<br>Black beard<br>Brey tee</div>
+    </div>
+    <div class="char-card" id="card3" onclick="selectChar(3)">
+      <div class="octo-big">🌺</div>
+      <div class="char-name">TROPICO</div>
+      <div class="char-desc">Pale · big eyes<br>Hawaiian shirt<br>Green cap</div>
+    </div>
+    <div class="char-card locked-card" id="card4">
       <div class="octo-big">❓</div>
       <div class="char-name">??? LOCKED</div>
       <div class="char-desc">Complete all 8 levels<br>to unlock</div>
@@ -315,9 +325,8 @@ function advanceCut(){
 
 // ══ CHARACTER SELECT ════════════════════════════════════════
 let selectedChar=0;
-const CHARS=['grumpy','dripped','secret'];
 function selectChar(n){
-  if(n===2)return;
+  if(n===4&&document.getElementById('card4').classList.contains('locked-card'))return;
   selectedChar=n;
   document.querySelectorAll('.char-card').forEach((c,i)=>{c.classList.toggle('selected',i===n);});
 }
@@ -325,25 +334,153 @@ function checkUnlockSecret(){
   const scores=getScores();
   const beaten=scores.some(s=>s.level>=8);
   if(beaten){
-    const c=document.getElementById('card2');
+    const c=document.getElementById('card4');
     c.classList.remove('locked-card');
     c.querySelector('.char-name').textContent='PHANTOM';
     c.querySelector('.char-desc').textContent='Golden glow\nAll-seeing eyes\nOcean legend';
     c.querySelector('.octo-big').textContent='✨';
-    c.onclick=()=>selectChar(2);
+    c.onclick=()=>selectChar(4);
   }
 }
 function showCharSelect(){checkUnlockSecret();hideAll();document.getElementById('charSelect').classList.add('active');}
 function startFromCharSelect(){showCutscene(STORIES[0],()=>startGame());}
 
-// ══ LEADERBOARD ═════════════════════════════════════════════
-function getScores(){try{return JSON.parse(localStorage.getItem('lnf0_lb')||'[]');}catch{return[];}}
-function putScores(a){try{localStorage.setItem('lnf0_lb',JSON.stringify(a));}catch{}}
-function addScore(name,score,level){const a=getScores();a.push({name:name.toUpperCase().slice(0,8)||'???',score,level});a.sort((x,y)=>y.score-x.score);putScores(a.slice(0,10));}
-function showLB(){const a=getScores(),el=document.getElementById('lbList');el.innerHTML=a.length?a.map((s,i)=>`<div class="lb-row"><span class="lb-rank">#${i+1}</span><span class="lb-name">${s.name}</span><span class="lb-score">${s.score.toLocaleString()}</span></div>`).join(''):'<div class="lb-row" style="justify-content:center;color:rgba(255,255,255,.4)">No scores yet!</div>';hideAll();document.getElementById('leaderboard').classList.add('show');}
+// ══ LEADERBOARD — SUPABASE GLOBAL ═══════════════════════════
+// HOW TO SET UP (one time, 5 minutes, completely free):
+// 1. Go to https://supabase.com → New project (free tier)
+// 2. Go to SQL Editor → run this:
+//    CREATE TABLE lnf0_scores (
+//      id SERIAL PRIMARY KEY,
+//      name TEXT NOT NULL,
+//      score INTEGER NOT NULL,
+//      level INTEGER NOT NULL,
+//      created_at TIMESTAMP DEFAULT NOW()
+//    );
+//    ALTER TABLE lnf0_scores ENABLE ROW LEVEL SECURITY;
+//    CREATE POLICY "Anyone can read" ON lnf0_scores FOR SELECT USING (true);
+//    CREATE POLICY "Anyone can insert" ON lnf0_scores FOR INSERT WITH CHECK (true);
+// 3. Go to Settings → API → copy Project URL and anon public key
+// 4. Paste them into SUPABASE_URL and SUPABASE_KEY below
+
+const SUPABASE_URL = 'https://xolxcdbquvfmhxekiayl.supabase.co';   // ← paste here
+const SUPABASE_KEY = 'sb_publishable_O01oJ9Y8UeIMBcObol_VUA_VVZGkUua'; // ← paste here
+const SB_READY = SUPABASE_URL !== 'YOUR_SUPABASE_URL';
+
+// Local backup always — scores never lost even if network fails
+function getLocalScores(){try{return JSON.parse(localStorage.getItem('lnf0_lb')||'[]');}catch{return[];}}
+function putLocalScores(a){try{localStorage.setItem('lnf0_lb',JSON.stringify(a));}catch{}}
+
+// Sanitise name — strip anything that could cause issues
+function cleanName(n){return(n||'').replace(/[^a-zA-Z0-9_\- ]/g,'').trim().slice(0,12).toUpperCase()||'ANON';}
+
+// Fetch top 20 scores from Supabase, fall back to local
+async function fetchGlobalScores(){
+  if(!SB_READY) return getLocalScores();
+  try{
+    const r=await fetch(
+      `${SUPABASE_URL}/rest/v1/lnf0_scores?select=name,score,level&order=score.desc&limit=20`,
+      {headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`},
+       signal:AbortSignal.timeout(5000)}
+    );
+    if(!r.ok) throw new Error('fetch failed');
+    const rows=await r.json();
+    // Also save locally as backup
+    putLocalScores(rows);
+    return rows;
+  }catch(e){
+    console.warn('LB fetch failed, using local:',e.message);
+    return getLocalScores();
+  }
+}
+
+// Push a single score row — Supabase inserts it, no read-modify-write needed
+async function pushGlobalScore(name,score,level){
+  const entry={name:cleanName(name),score:Math.floor(Number(score)),level:Math.floor(Number(level))};
+
+  // Always save locally first so player never loses their score
+  const local=getLocalScores();
+  local.push(entry);
+  local.sort((a,b)=>b.score-a.score);
+  putLocalScores(local.slice(0,20));
+
+  if(!SB_READY){
+    console.warn('Supabase not configured — score saved locally only');
+    return;
+  }
+  try{
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/lnf0_scores`,{
+      method:'POST',
+      headers:{
+        'apikey':SUPABASE_KEY,
+        'Authorization':`Bearer ${SUPABASE_KEY}`,
+        'Content-Type':'application/json',
+        'Prefer':'return=minimal'
+      },
+      body:JSON.stringify(entry),
+      signal:AbortSignal.timeout(6000)
+    });
+    if(!r.ok) throw new Error(`insert failed: ${r.status}`);
+  }catch(e){
+    console.warn('LB push failed — score kept locally:',e.message);
+  }
+}
+
+function getScores(){return getLocalScores();}
+
+async function showLB(){
+  hideAll();document.getElementById('leaderboard').classList.add('show');
+  const el=document.getElementById('lbList');
+
+  if(!SB_READY){
+    el.innerHTML=`<div class="lb-row" style="justify-content:center;flex-direction:column;gap:6px;text-align:center;color:rgba(255,200,0,.8);font-size:11px;padding:12px">
+      ⚠️ SUPABASE NOT CONFIGURED YET<br>
+      <span style="color:rgba(255,255,255,.4);font-size:10px">Follow setup steps in the code comments<br>to enable the global leaderboard</span>
+    </div>`;
+    // Still show local scores if any
+    const local=getLocalScores();
+    if(local.length){
+      el.innerHTML+=`<div style="text-align:center;font-size:10px;color:rgba(255,255,255,.3);padding:4px 0">LOCAL SCORES (this device only)</div>`;
+      el.innerHTML+=local.map((s,i)=>{
+        const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`;
+        return `<div class="lb-row"><span class="lb-rank">${medal}</span><span class="lb-name">${s.name}</span><span class="lb-score">${Number(s.score).toLocaleString()}</span></div>`;
+      }).join('');
+    }
+    return;
+  }
+
+  el.innerHTML='<div class="lb-row" style="justify-content:center;color:rgba(0,229,255,.6);font-size:12px">🌊 Loading global scores...</div>';
+  const rows=await fetchGlobalScores();
+
+  if(!rows.length){
+    el.innerHTML='<div class="lb-row" style="justify-content:center;color:rgba(255,255,255,.4)">No scores yet — be first! 🐙</div>';
+    return;
+  }
+
+  // Proper dense ranking — same score = same rank, next rank skips
+  let rank=1;
+  el.innerHTML=rows.map((s,i)=>{
+    if(i>0&&Number(s.score)<Number(rows[i-1].score)) rank=i+1;
+    const medal=rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':`#${rank}`;
+    const lvlBadge=s.level>=8?'👑':s.level>=6?'🔥':'';
+    return `<div class="lb-row">
+      <span class="lb-rank">${medal}</span>
+      <span class="lb-name">${s.name} ${lvlBadge}</span>
+      <span class="lb-score">${Number(s.score).toLocaleString()}</span>
+    </div>`;
+  }).join('');
+}
+
 function closeLB(){document.getElementById('leaderboard').classList.remove('show');document.getElementById('titleScreen').classList.add('active');}
 function showNameEntry(){['gameOver','winScreen'].forEach(id=>document.getElementById(id).classList.remove('show'));document.getElementById('nameEntry').classList.add('show');setTimeout(()=>document.getElementById('nameInput').focus(),300);}
-function saveScore(){addScore(document.getElementById('nameInput').value,gameState.score,gameState.level);document.getElementById('nameEntry').classList.remove('show');showLB();}
+async function saveScore(){
+  const name=document.getElementById('nameInput').value;
+  document.getElementById('nameEntry').classList.remove('show');
+  // Show saving state
+  const btn=document.querySelector('#nameEntry .big-btn');
+  if(btn)btn.textContent='SAVING...';
+  await pushGlobalScore(name,gameState.score,gameState.level);
+  showLB();
+}
 
 // ══ SHARE SCORE ═════════════════════════════════════════════
 function shareScore(){
@@ -416,7 +553,20 @@ function addCombo(){
 }
 function resetCombo(){comboCount=0;comboMult=1;clearTimeout(comboTimer);document.getElementById('comboDisp').classList.remove('show');}
 
-// ══ GAME STATE ═══════════════════════════════════════════════
+// ══ VISIBILITY — pause when tab/phone goes background ═══════
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){
+    if(gameState.animFrame){cancelAnimationFrame(gameState.animFrame);gameState.animFrame=null;}
+    stopMusic();
+  } else {
+    // Only resume if we were actually in game
+    const gs=document.getElementById('gameScreen');
+    if(gs&&gs.classList.contains('active')&&gameState.player&&!gameState.levelClearing){
+      startMusic(gameState.level||1);
+      gameLoop();
+    }
+  }
+});
 let gameState={};
 const keys={left:false,right:false,up:false,down:false};
 function initState(){return{level:1,tentacles:0,score:0,player:{x:0,y:0,vx:0,vy:0,size:28,hp:3,invincible:0,inkCooldown:0,shield:false,speedBoost:0,magnet:false},foods:[],obstacles:[],powerups:[],allies:[],tentacleItem:null,tentacleLocked:true,frame:0,animFrame:null,levelClearing:false,timeLeft:0,inkClouds:[],boss:null,scrollX:0};}
@@ -447,8 +597,22 @@ canvas.addEventListener('touchstart',e=>{e.preventDefault();const now=Date.now()
 canvas.addEventListener('touchmove',e=>{e.preventDefault();if(touch.active){touch.x=e.touches[0].clientX;touch.y=e.touches[0].clientY;}},{passive:false});
 canvas.addEventListener('touchend',e=>{e.preventDefault();touch.active=false;},{passive:false});
 
-// ══ PARTICLES ════════════════════════════════════════════════
-function spawnP(x,y,col,n=8){for(let i=0;i<n;i++){const a=(i/n)*Math.PI*2,sp=80+Math.random()*80,p=document.createElement('div');p.className='particle';const sz=6+Math.random()*8;p.style.cssText=`left:${x}px;top:${y}px;width:${sz}px;height:${sz}px;background:${col};--tx:${Math.cos(a)*sp}px;--ty:${Math.sin(a)*sp}px;box-shadow:0 0 6px ${col}`;document.getElementById('particles').appendChild(p);setTimeout(()=>p.remove(),1000);}}
+// ══ PARTICLES (capped for performance) ══════════════════════
+const MAX_PARTICLES=60;
+function spawnP(x,y,col,n=8){
+  const pEl=document.getElementById('particles');
+  // Cap total particles to avoid memory bloat under traffic
+  while(pEl.children.length>MAX_PARTICLES)pEl.removeChild(pEl.firstChild);
+  const count=Math.min(n,12); // never spawn more than 12 at once
+  for(let i=0;i<count;i++){
+    const a=(i/count)*Math.PI*2,sp=70+Math.random()*70;
+    const p=document.createElement('div');p.className='particle';
+    const sz=5+Math.random()*7;
+    p.style.cssText=`left:${x}px;top:${y}px;width:${sz}px;height:${sz}px;background:${col};--tx:${Math.cos(a)*sp}px;--ty:${Math.sin(a)*sp}px;box-shadow:0 0 5px ${col}`;
+    pEl.appendChild(p);
+    setTimeout(()=>{if(p.parentNode)p.parentNode.removeChild(p);},900);
+  }
+}
 
 // ══ DIFFICULTY TABLE (per level) ════════════════════════════
 // Each entry: {hp, time, foods, obsCount, obsSpeed, obsTypes, homing, allyCount, puCount}
@@ -460,8 +624,8 @@ const DIFF=[
   {hp:3,time:55, foods:6, obsCount:9, obsSpeed:1.1,obsTypes:['net','current'],  homing:false,allyCount:1,puCount:2}, // 4 slightly medium
   {hp:2,time:45, foods:5, obsCount:12,obsSpeed:1.5,obsTypes:['net','current','predator'],homing:false,allyCount:1,puCount:2}, // 5 medium
   {hp:2,time:38, foods:5, obsCount:16,obsSpeed:2.0,obsTypes:['net','current','predator'],homing:true, allyCount:1,puCount:2}, // 6 slightly hard
-  {hp:1,time:28, foods:4, obsCount:20,obsSpeed:2.7,obsTypes:['current','predator'],      homing:true, allyCount:0,puCount:1}, // 7 quite hard
-  {hp:1,time:22, foods:4, obsCount:14,obsSpeed:3.2,obsTypes:['current','predator'],      homing:true, allyCount:0,puCount:1}, // 8 boss level, hard
+  {hp:2,time:40, foods:4, obsCount:11,obsSpeed:1.6,obsTypes:['net','current','predator'], homing:true, allyCount:1,puCount:2}, // 7 quite hard but beatable — max 4 homing sharks
+  {hp:1,time:22, foods:4, obsCount:13,obsSpeed:2.5,obsTypes:['current','predator'],       homing:true, allyCount:0,puCount:1}, // 8 boss level, very hard
 ];
 
 // ══ LEVEL GENERATION ════════════════════════════════════════
@@ -502,16 +666,24 @@ function genLevel(state){
   // Boss
   if(lvl===8){state.boss={x:W*.78,y:H*.5,hp:3,maxHp:3,size:52,vx:2,vy:1.5,phase:0,angry:false};document.getElementById('bossWrap').style.display='block';updBoss(state.boss);}
   else document.getElementById('bossWrap').style.display='none';
-  // Obstacles
+  // Obstacles — cap homing sharks so no level is ever overwhelming
   state.obstacles=[];
+  const maxHomingSharks={5:0,6:2,7:3,8:4}[lvl]||0; // hard cap per level
+  let homingCount=0;
   for(let i=0;i<d.obsCount;i++){
     const type=d.obsTypes[Math.floor(Math.random()*d.obsTypes.length)];
-    const homing=d.homing&&type==='predator';
+    // Only allow homing if under cap, else make non-homing predator
+    const wantsHoming=d.homing&&type==='predator';
+    const homing=wantsHoming&&homingCount<maxHomingSharks;
+    if(homing)homingCount++;
     const spd=d.obsSpeed*(0.8+Math.random()*.4);
     const ang=Math.random()*Math.PI*2;
+    // Spawn obstacles away from player start position
+    const ox=W*(.3+Math.random()*.6);
+    const oy=H*(.08+Math.random()*.8);
     state.obstacles.push({
-      x:W*(.22+Math.random()*.68),y:H*(.08+Math.random()*.8),
-      size:12+Math.random()*(4+lvl*1.2),
+      x:ox,y:oy,
+      size:12+Math.random()*(3+lvl*1.0),
       type,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,
       phase:Math.random()*Math.PI*2,frozen:0,homing,distracted:0
     });
@@ -589,11 +761,116 @@ function drawPhantom(x,y,size,tents,fr){
 
 function drawOctopus(x,y,size,tents,fr){
   const s=gameState,angry=s.timeLeft<=8&&s.timeLeft>0,bobCap=s.player.speedBoost>0||s.frame%120<60;
+  // Shield bubble
   if(s.player.shield){ctx.save();ctx.translate(x,y);ctx.strokeStyle='rgba(0,229,255,.6)';ctx.lineWidth=3;ctx.globalAlpha=Math.sin(s.frame*.08)*.3+.7;ctx.beginPath();ctx.arc(0,0,size*1.6,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=.08;ctx.fillStyle='rgba(0,229,255,1)';ctx.beginPath();ctx.arc(0,0,size*1.6,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;ctx.restore();}
-  if(s.player.speedBoost>0){ctx.save();ctx.globalAlpha=.25;for(let i=1;i<=3;i++){const bx=x-s.player.vx*i*2,by=y-s.player.vy*i*2;if(selectedChar===0)drawGrumpy(bx,by,size*(.9-i*.1),tents,fr,false);else if(selectedChar===1)drawDripped(bx,by,size*(.9-i*.1),tents,fr,false);else drawPhantom(bx,by,size*(.9-i*.1),tents,fr);}ctx.globalAlpha=1;ctx.restore();}
-  if(selectedChar===0)drawGrumpy(x,y,size,tents,fr,angry);
-  else if(selectedChar===1)drawDripped(x,y,size,tents,fr,bobCap);
+  // Speed trail
+  if(s.player.speedBoost>0){ctx.save();ctx.globalAlpha=.25;for(let i=1;i<=3;i++){const bx=x-s.player.vx*i*2,by=y-s.player.vy*i*2;_drawChar(selectedChar,bx,by,size*(.9-i*.1),tents,fr,false,false);}ctx.globalAlpha=1;ctx.restore();}
+  _drawChar(selectedChar,x,y,size,tents,fr,angry,bobCap);
+}
+function _drawChar(ch,x,y,size,tents,fr,angry,bobCap){
+  if(ch===0)drawGrumpy(x,y,size,tents,fr,angry);
+  else if(ch===1)drawDripped(x,y,size,tents,fr,bobCap);
+  else if(ch===2)drawBrey(x,y,size,tents,fr);
+  else if(ch===3)drawTropico(x,y,size,tents,fr);
   else drawPhantom(x,y,size,tents,fr);
+}
+
+// ── BREY — tan, orange shades, black beard, Brey tee ────────
+function drawBrey(x,y,size,tents,fr){
+  ctx.save();ctx.translate(x,y);ctx.translate(0,Math.sin(fr*.05)*3);
+  // Glow — warm orange
+  const grd=ctx.createRadialGradient(0,0,0,0,0,size*2.2);grd.addColorStop(0,'rgba(255,140,60,.2)');grd.addColorStop(1,'transparent');ctx.fillStyle=grd;ctx.beginPath();ctx.arc(0,0,size*2.2,0,Math.PI*2);ctx.fill();
+  // Tentacles — tan/sandy
+  const aa=[200,220,240,260,280,300,320,340];
+  for(let i=0;i<tents;i++){
+    const a=(aa[i]*Math.PI)/180,w=Math.sin(fr*.07+i*.8)*10;
+    const tg=ctx.createLinearGradient(Math.cos(a)*size*.5,Math.sin(a)*size*.5,Math.cos(a)*size*2,Math.sin(a)*size*2);
+    tg.addColorStop(0,'#d4956a');tg.addColorStop(.6,'#c07840');tg.addColorStop(1,'#a05020');
+    ctx.strokeStyle=tg;ctx.lineWidth=5;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(Math.cos(a)*size*.5,Math.sin(a)*size*.5);
+    ctx.bezierCurveTo(Math.cos(a)*size*1.1+w,Math.sin(a)*size*1.1,Math.cos(a)*size*1.6+w*1.3,Math.sin(a)*size*1.6+w*.5,Math.cos(a)*size*2+w*.8,Math.sin(a)*size*2+w);ctx.stroke();
+  }
+  // Body — tan/peach square
+  const bg=ctx.createRadialGradient(-size*.1,-size*.3,0,0,0,size*1.1);
+  bg.addColorStop(0,'#e8b088');bg.addColorStop(.5,'#c88858');bg.addColorStop(1,'#a86838');
+  ctx.fillStyle=bg;ctx.beginPath();ctx.roundRect(-size*.68,-size*1.0,size*1.36,size*1.4,[size*.3,size*.3,size*.2,size*.2]);ctx.fill();
+  // White tee
+  ctx.fillStyle='#f0f0f0';ctx.beginPath();ctx.roundRect(-size*.55,size*.05,size*1.1,size*.5,[0,0,size*.25,size*.25]);ctx.fill();
+  // Brey script text
+  ctx.fillStyle='#333';ctx.font=`italic bold ${size*.2}px Georgia,serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('Brey',0,size*.28);
+  // Black beard
+  ctx.fillStyle='#1a1a1a';ctx.beginPath();ctx.ellipse(0,size*.08,size*.45,size*.32,0,0,Math.PI);ctx.fill();
+  ctx.beginPath();ctx.ellipse(-size*.28,-size*.04,size*.16,size*.2,-.3,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(size*.28,-size*.04,size*.16,size*.2,.3,0,Math.PI*2);ctx.fill();
+  // Orange mirror shades
+  const shadeGrd=ctx.createLinearGradient(-size*.5,-size*.55,size*.5,-size*.35);
+  shadeGrd.addColorStop(0,'#ff8800');shadeGrd.addColorStop(.5,'#ffaa00');shadeGrd.addColorStop(1,'#ff6600');
+  ctx.fillStyle='#111';ctx.beginPath();ctx.roundRect(-size*.62,-size*.72,size*1.24,size*.16,size*.05);ctx.fill();// frame
+  ctx.fillStyle=shadeGrd;
+  ctx.beginPath();ctx.roundRect(-size*.6,-size*.68,size*.52,size*.28,size*.1);ctx.fill();
+  ctx.beginPath();ctx.roundRect(size*.08,-size*.68,size*.52,size*.28,size*.1);ctx.fill();
+  ctx.fillStyle='#0008';ctx.fillRect(-size*.08,-size*.58,size*.16,size*.08);// bridge
+  // Shine on lenses
+  ctx.fillStyle='rgba(255,255,255,.25)';
+  ctx.beginPath();ctx.roundRect(-size*.56,-size*.66,size*.18,size*.1,size*.04);ctx.fill();
+  ctx.beginPath();ctx.roundRect(size*.12,-size*.66,size*.18,size*.1,size*.04);ctx.fill();
+  // Orange beanie hat
+  ctx.fillStyle='#c85a10';ctx.beginPath();ctx.roundRect(-size*.65,-size*1.22,size*1.3,size*.58,[size*.35,size*.35,0,0]);ctx.fill();
+  // Beanie stripes
+  ctx.strokeStyle='rgba(0,0,0,.2)';ctx.lineWidth=3;
+  for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(-size*.62,-size*.9+i*size*.15);ctx.lineTo(size*.62,-size*.9+i*size*.15);ctx.stroke();}
+  // Beanie band
+  ctx.fillStyle='#a04010';ctx.beginPath();ctx.roundRect(-size*.68,-size*.72,size*1.36,size*.16,[0,0,0,0]);ctx.fill();
+  ctx.restore();
+}
+
+// ── TROPICO — pale, big eyes, Hawaiian shirt, green cap ─────
+function drawTropico(x,y,size,tents,fr){
+  ctx.save();ctx.translate(x,y);ctx.translate(0,Math.sin(fr*.05)*3);
+  // Glow — tropical
+  const grd=ctx.createRadialGradient(0,0,0,0,0,size*2.2);grd.addColorStop(0,'rgba(100,200,100,.2)');grd.addColorStop(1,'transparent');ctx.fillStyle=grd;ctx.beginPath();ctx.arc(0,0,size*2.2,0,Math.PI*2);ctx.fill();
+  // Tentacles — pale pink with red tips like the NFT
+  const aa=[200,220,240,260,280,300,320,340];
+  for(let i=0;i<tents;i++){
+    const a=(aa[i]*Math.PI)/180,w=Math.sin(fr*.07+i*.8)*10;
+    const tg=ctx.createLinearGradient(Math.cos(a)*size*.5,Math.sin(a)*size*.5,Math.cos(a)*size*2,Math.sin(a)*size*2);
+    tg.addColorStop(0,'#d4b0b0');tg.addColorStop(.6,'#c07878');tg.addColorStop(1,'#c02828');
+    ctx.strokeStyle=tg;ctx.lineWidth=5;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(Math.cos(a)*size*.5,Math.sin(a)*size*.5);
+    ctx.bezierCurveTo(Math.cos(a)*size*1.1+w,Math.sin(a)*size*1.1,Math.cos(a)*size*1.6+w*1.3,Math.sin(a)*size*1.6+w*.5,Math.cos(a)*size*2+w*.8,Math.sin(a)*size*2+w);ctx.stroke();
+    // Curly tip
+    ctx.strokeStyle='#c02828';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(Math.cos(a)*size*2+w*.8,Math.sin(a)*size*2+w,size*.16,0,Math.PI*1.5);ctx.stroke();
+  }
+  // Body — pale/lavender like NFT
+  const bg=ctx.createRadialGradient(-size*.1,-size*.3,0,0,0,size*1.1);
+  bg.addColorStop(0,'#e8d8e0');bg.addColorStop(.5,'#c8b0c0');bg.addColorStop(1,'#a888a0');
+  ctx.fillStyle=bg;ctx.beginPath();ctx.roundRect(-size*.65,-size*.95,size*1.3,size*1.35,[size*.35,size*.35,size*.2,size*.2]);ctx.fill();
+  // Hawaiian shirt — cream with flowers/huts
+  ctx.fillStyle='#fff8e8';ctx.beginPath();ctx.roundRect(-size*.6,size*.0,size*1.2,size*.52,[size*.08,size*.08,size*.2,size*.2]);ctx.fill();
+  // Shirt collar V
+  ctx.fillStyle='#fff8e8';ctx.beginPath();ctx.moveTo(-size*.12,-size*.04);ctx.lineTo(0,size*.12);ctx.lineTo(size*.12,-size*.04);ctx.fill();
+  // Shirt patterns — tiny flowers and palms
+  ctx.font=`${size*.18}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('🌺',-size*.3,size*.2);ctx.fillText('🌴',size*.28,size*.2);ctx.fillText('🌺',0,size*.38);
+  // Shirt buttons
+  ctx.fillStyle='#ddd';[size*.06,size*.18,size*.3].forEach(by=>{ctx.beginPath();ctx.arc(0,by,size*.04,0,Math.PI*2);ctx.fill();});
+  // Big sparkly eyes — signature Tropico look
+  ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(-size*.24,-size*.3,size*.24,size*.26,0,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(size*.24,-size*.3,size*.24,size*.26,0,0,Math.PI*2);ctx.fill();
+  // Dark irises — large
+  ctx.fillStyle='#111';ctx.beginPath();ctx.arc(-size*.24,-size*.3,size*.17,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(size*.24,-size*.3,size*.17,0,Math.PI*2);ctx.fill();
+  // Highlight — big sparkle
+  ctx.fillStyle='white';ctx.beginPath();ctx.arc(-size*.18,-size*.37,size*.08,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(size*.3,-size*.37,size*.08,0,Math.PI*2);ctx.fill();
+  // Small second sparkle
+  ctx.beginPath();ctx.arc(-size*.28,-size*.24,size*.04,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(size*.2,-size*.24,size*.04,0,Math.PI*2);ctx.fill();
+  // Gentle smile
+  ctx.strokeStyle='#886688';ctx.lineWidth=2.5;ctx.lineCap='round';ctx.beginPath();ctx.arc(0,size*.02,size*.16,0.2,Math.PI-.2);ctx.stroke();
+  // Green cap with lizard logo
+  const capBob=Math.sin(fr*.1)*2;
+  ctx.fillStyle='#3a7a30';ctx.beginPath();ctx.ellipse(0,-size*.74+capBob,size*.72,size*.13,0,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.roundRect(-size*.6,-size*1.18+capBob,size*1.2,size*.5,[size*.35,size*.35,0,0]);ctx.fill();
+  // Lizard/dragon logo on cap
+  ctx.fillStyle='rgba(100,220,80,.8)';ctx.font=`${size*.22}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🦎',0,-size*.96+capBob);
+  ctx.restore();
 }
 
 function drawBoss(boss,fr){
@@ -666,27 +943,34 @@ function drawDrag(){if(!touch.active)return;ctx.save();ctx.strokeStyle='rgba(0,2
 function drawHUD(){
   const s=gameState,t=s.timeLeft;
   const hasTimer=t<999;
+  // Dark shadow makes text readable on ANY background color (fix #2)
+  ctx.shadowColor='rgba(0,0,0,0.9)';ctx.shadowBlur=6;ctx.shadowOffsetX=1;ctx.shadowOffsetY=1;
   if(hasTimer){
-    const tc=t<=5?'#ff2d55':t<=10?'#ffd700':'#00e5ff';
+    const tc=t<=5?'#ff4466':t<=10?'#ffd700':'#00e5ff';
     ctx.font=`bold 15px 'Orbitron',monospace`;ctx.fillStyle=tc;ctx.textAlign='center';ctx.fillText(`⏱ ${t}s`,canvas.width/2,36);
-    if(t<=5&&s.frame%30<15){ctx.fillStyle='rgba(255,45,85,.1)';ctx.fillRect(0,0,canvas.width,canvas.height);}
+    if(t<=5&&s.frame%30<15){ctx.shadowBlur=0;ctx.fillStyle='rgba(255,45,85,.1)';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.shadowBlur=6;}
   }
-  ctx.font=`10px 'Exo 2',sans-serif`;ctx.fillStyle='rgba(255,255,255,.26)';ctx.textAlign='center';ctx.fillText(ZONES[Math.min(s.level-1,7)].name,canvas.width/2,hasTimer?52:36);
+  ctx.font=`bold 10px 'Exo 2',sans-serif`;ctx.fillStyle='#ffffff';ctx.textAlign='center';ctx.fillText(ZONES[Math.min(s.level-1,7)].name,canvas.width/2,hasTimer?52:36);
   const rem=s.foods.filter(f=>!f.collected).length;
-  ctx.font=`12px 'Exo 2',sans-serif`;ctx.fillStyle=rem>0?'rgba(255,255,255,.5)':'#00ff88';ctx.textAlign='left';ctx.fillText(rem>0?`🦐 ${rem} left`:'💜 GRAB IT!',16,canvas.height-72);
-  ctx.font=`11px 'Exo 2',sans-serif`;if(s.player.inkCooldown>0){ctx.fillStyle='rgba(100,0,160,.6)';ctx.fillText(`🖤 ${Math.ceil(s.player.inkCooldown/60)}s`,16,canvas.height-56);}else{ctx.fillStyle='rgba(180,100,255,.8)';ctx.fillText('🖤 READY',16,canvas.height-56);}
+  ctx.font=`bold 13px 'Exo 2',sans-serif`;ctx.fillStyle=rem>0?'#ffffff':'#00ff88';ctx.textAlign='left';ctx.fillText(rem>0?`🦐 ${rem} left`:'💜 GRAB IT!',16,canvas.height-72);
+  ctx.font=`bold 12px 'Exo 2',sans-serif`;
+  if(s.player.inkCooldown>0){ctx.fillStyle='#cc88ff';ctx.fillText(`🖤 INK ${Math.ceil(s.player.inkCooldown/60)}s`,16,canvas.height-56);}
+  else{ctx.fillStyle='#cc88ff';ctx.fillText('🖤 INK READY',16,canvas.height-56);}
   let py=canvas.height-40;
   if(s.player.speedBoost>0){ctx.fillStyle='#ffd700';ctx.fillText(`⚡ ${Math.ceil(s.player.speedBoost/60)}s`,16,py);py-=16;}
   if(s.player.shield){ctx.fillStyle='#00e5ff';ctx.fillText('🔵 SHIELD',16,py);py-=16;}
   if(s.player.magnet){ctx.fillStyle='#ff6b35';ctx.fillText('🧲 MAGNET',16,py);}
-  ctx.textAlign='right';ctx.font='15px serif';
+  ctx.textAlign='right';ctx.font='16px serif';
   const d=DIFF[s.level],maxHp=d?d.hp:1;
   for(let i=0;i<maxHp;i++)ctx.fillText(i<s.player.hp?'💜':'🖤',canvas.width-14-i*20,canvas.height-20);
+  ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
 }
 
 // ══ GAME LOOP ════════════════════════════════════════════════
 function gameLoop(){
+  // Guard: don't run if already cancelled
   const s=gameState,W=canvas.width,H=canvas.height;
+  if(!s||s.levelClearing===undefined)return;
   s.frame++;ctx.clearRect(0,0,W,H);
 
   // Scroll world toward tentacle
@@ -699,10 +983,13 @@ function gameLoop(){
   if(!s.levelClearing){
     // Timer
     if(s.timeLeft<999&&s.frame%60===0&&s.timeLeft>0){s.timeLeft--;if(s.timeLeft<=0){showGameOver('TIME\'S UP');return;}}
-    // Movement
-    const bsp=3.8+s.tentacles*.18,speed=s.player.speedBoost>0?bsp*2.1:bsp,drag=.82;
-    if(touch.active){const dx=touch.x-s.player.x,dy=touch.y-s.player.y,dist=Math.sqrt(dx*dx+dy*dy);if(dist>6){const pull=Math.min(dist*.18,speed);s.player.vx+=(dx/dist)*pull;s.player.vy+=(dy/dist)*pull;}}
-    else{if(keys.left)s.player.vx-=speed*.22;if(keys.right)s.player.vx+=speed*.22;if(keys.up)s.player.vy-=speed*.22;if(keys.down)s.player.vy+=speed*.22;}
+    // Movement — snappier response (fix #1)
+    const bsp=5.5+s.tentacles*.22,speed=s.player.speedBoost>0?bsp*2.1:bsp,drag=.75;
+    if(touch.active){
+      const dx=touch.x-s.player.x,dy=touch.y-s.player.y,dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist>4){const pull=Math.min(dist*.28,speed*1.2);s.player.vx+=(dx/dist)*pull;s.player.vy+=(dy/dist)*pull;}
+    }
+    else{if(keys.left)s.player.vx-=speed*.32;if(keys.right)s.player.vx+=speed*.32;if(keys.up)s.player.vy-=speed*.32;if(keys.down)s.player.vy+=speed*.32;}
     s.player.vx*=drag;s.player.vy*=drag;
     const spd=Math.sqrt(s.player.vx**2+s.player.vy**2);if(spd>speed){s.player.vx=s.player.vx/spd*speed;s.player.vy=s.player.vy/spd*speed;}
     s.player.x=Math.max(s.player.size,Math.min(W-s.player.size,s.player.x+s.player.vx));
@@ -756,8 +1043,11 @@ function gameLoop(){
         if(nearAlly){const dx=nearAlly.x-obs.x,dy=nearAlly.y-obs.y,dist=Math.sqrt(dx*dx+dy*dy);obs.vx+=(dx/dist)*.1;obs.vy+=(dy/dist)*.08;}
       } else if(obs.homing){
         const dx=s.player.x-obs.x,dy=s.player.y-obs.y,dist=Math.sqrt(dx*dx+dy*dy);
-        const hf=.035+s.level*.007;obs.vx+=(dx/dist)*hf*(s.level*.45);obs.vy+=(dy/dist)*hf*(s.level*.45);
-        const osp=Math.sqrt(obs.vx**2+obs.vy**2),ms=2.2+s.level*.35;if(osp>ms){obs.vx=obs.vx/osp*ms;obs.vy=obs.vy/osp*ms;}
+        // Gentler homing — sharks track you but can be outrun and dodged
+        const hf=Math.min(0.018+s.level*.003, 0.042);
+        obs.vx+=(dx/dist)*hf*(s.level*.3);obs.vy+=(dy/dist)*hf*(s.level*.3);
+        const osp=Math.sqrt(obs.vx**2+obs.vy**2),ms=1.5+s.level*.22;
+        if(osp>ms){obs.vx=obs.vx/osp*ms;obs.vy=obs.vy/osp*ms;}
       }
       obs.x+=obs.vx;obs.y+=obs.vy;if(obs.x<18||obs.x>W-18)obs.vx*=-1;if(obs.y<75||obs.y>H-75)obs.vy*=-1;
       if(dead)return;
