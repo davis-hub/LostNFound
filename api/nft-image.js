@@ -1,6 +1,9 @@
 // api/nft-image.js
 // Vercel serverless function — proxies NFT images with correct CORS headers
-// Uses CommonJS syntax (module.exports) — works on Vercel without package.json changes
+// Uses Node.js built-in https module — works on ALL Node versions (no fetch needed)
+
+const https = require(‘https’);
+const http = require(‘http’);
 
 const IPFS_GATEWAYS = [
 ‘https://cloudflare-ipfs.com/ipfs/’,
@@ -9,14 +12,46 @@ const IPFS_GATEWAYS = [
 ‘https://gateway.pinata.cloud/ipfs/’,
 ];
 
+function fetchUrl(url, timeoutMs = 10000) {
+return new Promise((resolve, reject) => {
+const lib = url.startsWith(‘https’) ? https : http;
+const req = lib.get(url, {
+headers: {
+‘User-Agent’: ‘LnF0-Game/1.0 NFT-Image-Proxy’,
+‘Referer’: ‘https://lost-n-found-yfbn.vercel.app/’,
+}
+}, (res) => {
+// Handle redirects
+if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+fetchUrl(res.headers.location, timeoutMs).then(resolve).catch(reject);
+return;
+}
+const chunks = [];
+res.on(‘data’, chunk => chunks.push(chunk));
+res.on(‘end’, () => {
+resolve({
+status: res.statusCode,
+ok: res.statusCode >= 200 && res.statusCode < 300,
+contentType: res.headers[‘content-type’] || ‘image/png’,
+buffer: Buffer.concat(chunks),
+});
+});
+res.on(‘error’, reject);
+});
+req.setTimeout(timeoutMs, () => {
+req.destroy();
+reject(new Error(‘Request timed out’));
+});
+req.on(‘error’, reject);
+});
+}
+
 async function fetchWithGateways(ipfsHash) {
 for (const gateway of IPFS_GATEWAYS) {
 try {
-const response = await fetch(`${gateway}${ipfsHash}`, {
-headers: { ‘User-Agent’: ‘LnF0-Game/1.0 NFT-Image-Proxy’ },
-signal: AbortSignal.timeout(8000),
-});
-if (response.ok) return response;
+const result = await fetchUrl(`${gateway}${ipfsHash}`);
+if (result.ok) return result;
+console.warn(`Gateway ${gateway} returned ${result.status}`);
 } catch (e) {
 console.warn(`Gateway ${gateway} failed:`, e.message);
 }
@@ -25,17 +60,15 @@ return null;
 }
 
 module.exports = async function handler(req, res) {
-// Always set CORS headers first — even on errors
+// Always set CORS headers first
 res.setHeader(‘Access-Control-Allow-Origin’, ‘*’);
 res.setHeader(‘Access-Control-Allow-Methods’, ‘GET, OPTIONS’);
 res.setHeader(‘Access-Control-Allow-Headers’, ‘Content-Type’);
 
-// Handle preflight
 if (req.method === ‘OPTIONS’) {
 return res.status(200).end();
 }
 
-// Only allow GET
 if (req.method !== ‘GET’) {
 return res.status(405).json({ error: ‘Method not allowed’ });
 }
@@ -54,75 +87,53 @@ return res.status(400).json({ error: ‘Invalid URL encoding’ });
 }
 
 try {
-let response = null;
-// Handle IPFS protocol — try multiple gateways
+let result = null;
 if (imageUrl.startsWith('ipfs://')) {
   const ipfsHash = imageUrl.replace('ipfs://', '');
-  response = await fetchWithGateways(ipfsHash);
-  if (!response) {
+  result = await fetchWithGateways(ipfsHash);
+  if (!result) {
     return res.status(502).json({ error: 'All IPFS gateways failed' });
   }
 } else {
-  // Regular HTTP/HTTPS URL
-  let hostname;
-  try {
-    hostname = new URL(imageUrl).hostname;
-  } catch (e) {
+  try { new URL(imageUrl); } catch (e) {
     return res.status(400).json({ error: 'Invalid URL format' });
   }
 
-  console.log('Proxying image from:', hostname);
+  console.log('Proxying image from:', imageUrl);
+  result = await fetchUrl(imageUrl);
 
-  response = await fetch(imageUrl, {
-    headers: {
-      'User-Agent': 'LnF0-Game/1.0 NFT-Image-Proxy',
-      'Referer': 'https://lost-n-found-yfbn.vercel.app/',
-    },
-    signal: AbortSignal.timeout(10000),
-  });
-
-  if (!response.ok) {
-    console.warn('Direct fetch failed:', response.status, imageUrl);
-    return res.status(response.status).json({
-      error: 'Upstream error: ' + response.status + ' ' + response.statusText,
+  if (!result.ok) {
+    console.warn('Fetch failed:', result.status, imageUrl);
+    return res.status(result.status).json({
+      error: 'Upstream error: ' + result.status,
       url: imageUrl,
     });
   }
 }
 
-const contentType = response.headers.get('content-type') || 'image/png';
+const contentType = result.contentType || 'image/png';
 
-// Accept images and binary types
 if (
   !contentType.startsWith('image/') &&
-  !contentType.includes('octet-stream') &&
-  !contentType.includes('application/octet')
+  !contentType.includes('octet-stream')
 ) {
   return res.status(400).json({
-    error: 'URL does not point to an image',
+    error: 'Not an image',
     contentType: contentType,
   });
 }
 
-const buffer = await response.arrayBuffer();
-
-if (!buffer || buffer.byteLength === 0) {
-  return res.status(502).json({ error: 'Empty response from image server' });
+if (!result.buffer || result.buffer.length === 0) {
+  return res.status(502).json({ error: 'Empty response' });
 }
 
 res.setHeader('Content-Type', contentType);
 res.setHeader('Cache-Control', 'public, max-age=86400, immutable');
-res.setHeader('X-Proxy', 'LnF0-NFT-Proxy');
 
-return res.status(200).send(Buffer.from(buffer));
+return res.status(200).send(result.buffer);
 
 } catch (error) {
-console.error(‘NFT image proxy error:’, error.message, error.name);
-if (error.name === 'TimeoutError' || (error.message && error.message.includes('timeout'))) {
-  return res.status(504).json({ error: 'Image fetch timed out', detail: error.message });
-}
-
-return res.status(500).json({ error: 'Failed to fetch image', detail: error.message });
-
+console.error(‘Proxy error:’, error.message);
+return res.status(500).json({ error: ‘Failed to fetch image’, detail: error.message });
 }
 };
