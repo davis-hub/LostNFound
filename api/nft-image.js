@@ -1,9 +1,9 @@
 // api/nft-image.js
 // Vercel serverless function — proxies NFT images with correct CORS headers
-// Uses Node.js built-in https module — works on ALL Node versions (no fetch needed)
+// Uses ES module syntax (import/export) — compatible with Vercel
 
-const https = require(‘https’);
-const http = require(‘http’);
+import https from ‘https’;
+import http from ‘http’;
 
 const IPFS_GATEWAYS = [
 ‘https://cloudflare-ipfs.com/ipfs/’,
@@ -59,7 +59,7 @@ console.warn(`Gateway ${gateway} failed:`, e.message);
 return null;
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
 // Always set CORS headers first
 res.setHeader(‘Access-Control-Allow-Origin’, ‘*’);
 res.setHeader(‘Access-Control-Allow-Methods’, ‘GET, OPTIONS’);
@@ -136,4 +136,4 @@ return res.status(200).send(result.buffer);
 console.error(‘Proxy error:’, error.message);
 return res.status(500).json({ error: ‘Failed to fetch image’, detail: error.message });
 }
-};
+}
