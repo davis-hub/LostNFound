@@ -1,21 +1,16 @@
 {
   "functions": {
     "api/nft-image.js": {
-      "maxDuration": 15
+      "maxDuration": 15,
+      "runtime": "nodejs18.x"
     }
   },
   "headers": [
     {
       "source": "/api/(.*)",
       "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, OPTIONS"
-        }
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, OPTIONS" }
       ]
     }
   ]
