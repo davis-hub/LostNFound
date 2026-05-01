@@ -1,139 +1,86 @@
 // api/nft-image.js
-// Vercel serverless function — proxies NFT images with correct CORS headers
-// Uses ES module syntax (import/export) — compatible with Vercel
 
-import https from ‘https’;
-import http from ‘http’;
+export const config = {
+runtime: ‘edge’,
+};
 
 const IPFS_GATEWAYS = [
 ‘https://cloudflare-ipfs.com/ipfs/’,
 ‘https://nftstorage.link/ipfs/’,
 ‘https://ipfs.io/ipfs/’,
-‘https://gateway.pinata.cloud/ipfs/’,
 ];
 
-function fetchUrl(url, timeoutMs = 10000) {
-return new Promise((resolve, reject) => {
-const lib = url.startsWith(‘https’) ? https : http;
-const req = lib.get(url, {
-headers: {
-‘User-Agent’: ‘LnF0-Game/1.0 NFT-Image-Proxy’,
-‘Referer’: ‘https://lost-n-found-yfbn.vercel.app/’,
-}
-}, (res) => {
-// Handle redirects
-if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-fetchUrl(res.headers.location, timeoutMs).then(resolve).catch(reject);
-return;
-}
-const chunks = [];
-res.on(‘data’, chunk => chunks.push(chunk));
-res.on(‘end’, () => {
-resolve({
-status: res.statusCode,
-ok: res.statusCode >= 200 && res.statusCode < 300,
-contentType: res.headers[‘content-type’] || ‘image/png’,
-buffer: Buffer.concat(chunks),
-});
-});
-res.on(‘error’, reject);
-});
-req.setTimeout(timeoutMs, () => {
-req.destroy();
-reject(new Error(‘Request timed out’));
-});
-req.on(‘error’, reject);
-});
-}
-
-async function fetchWithGateways(ipfsHash) {
-for (const gateway of IPFS_GATEWAYS) {
-try {
-const result = await fetchUrl(`${gateway}${ipfsHash}`);
-if (result.ok) return result;
-console.warn(`Gateway ${gateway} returned ${result.status}`);
-} catch (e) {
-console.warn(`Gateway ${gateway} failed:`, e.message);
-}
-}
-return null;
-}
-
-export default async function handler(req, res) {
-// Always set CORS headers first
-res.setHeader(‘Access-Control-Allow-Origin’, ‘*’);
-res.setHeader(‘Access-Control-Allow-Methods’, ‘GET, OPTIONS’);
-res.setHeader(‘Access-Control-Allow-Headers’, ‘Content-Type’);
+export default async function handler(req) {
+const corsHeaders = {
+‘Access-Control-Allow-Origin’: ‘*’,
+‘Access-Control-Allow-Methods’: ‘GET, OPTIONS’,
+‘Access-Control-Allow-Headers’: ‘Content-Type’,
+};
 
 if (req.method === ‘OPTIONS’) {
-return res.status(200).end();
+return new Response(null, { status: 200, headers: corsHeaders });
 }
 
-if (req.method !== ‘GET’) {
-return res.status(405).json({ error: ‘Method not allowed’ });
-}
-
-const { url } = req.query;
+const { searchParams } = new URL(req.url);
+const url = searchParams.get(‘url’);
 
 if (!url) {
-return res.status(400).json({ error: ‘Missing url parameter’ });
+return new Response(JSON.stringify({ error: ‘Missing url parameter’ }), {
+status: 400,
+headers: { …corsHeaders, ‘Content-Type’: ‘application/json’ },
+});
 }
 
-let imageUrl;
-try {
-imageUrl = decodeURIComponent(url);
-} catch (e) {
-return res.status(400).json({ error: ‘Invalid URL encoding’ });
-}
+let imageUrl = decodeURIComponent(url);
 
 try {
-let result = null;
+let response = null;
+// Handle IPFS URLs — try multiple gateways
 if (imageUrl.startsWith('ipfs://')) {
-  const ipfsHash = imageUrl.replace('ipfs://', '');
-  result = await fetchWithGateways(ipfsHash);
-  if (!result) {
-    return res.status(502).json({ error: 'All IPFS gateways failed' });
+  const hash = imageUrl.replace('ipfs://', '');
+  for (const gateway of IPFS_GATEWAYS) {
+    try {
+      response = await fetch(`${gateway}${hash}`);
+      if (response.ok) break;
+    } catch (e) {
+      continue;
+    }
+  }
+  if (!response || !response.ok) {
+    return new Response(JSON.stringify({ error: 'All IPFS gateways failed' }), {
+      status: 502,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 } else {
-  try { new URL(imageUrl); } catch (e) {
-    return res.status(400).json({ error: 'Invalid URL format' });
-  }
+  response = await fetch(imageUrl, {
+    headers: { 'User-Agent': 'LnF0-Game/1.0' },
+  });
 
-  console.log('Proxying image from:', imageUrl);
-  result = await fetchUrl(imageUrl);
-
-  if (!result.ok) {
-    console.warn('Fetch failed:', result.status, imageUrl);
-    return res.status(result.status).json({
-      error: 'Upstream error: ' + result.status,
-      url: imageUrl,
+  if (!response.ok) {
+    return new Response(JSON.stringify({ error: 'Upstream error: ' + response.status }), {
+      status: response.status,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 }
 
-const contentType = result.contentType || 'image/png';
+const contentType = response.headers.get('content-type') || 'image/png';
+const buffer = await response.arrayBuffer();
 
-if (
-  !contentType.startsWith('image/') &&
-  !contentType.includes('octet-stream')
-) {
-  return res.status(400).json({
-    error: 'Not an image',
-    contentType: contentType,
-  });
-}
-
-if (!result.buffer || result.buffer.length === 0) {
-  return res.status(502).json({ error: 'Empty response' });
-}
-
-res.setHeader('Content-Type', contentType);
-res.setHeader('Cache-Control', 'public, max-age=86400, immutable');
-
-return res.status(200).send(result.buffer);
+return new Response(buffer, {
+  status: 200,
+  headers: {
+    ...corsHeaders,
+    'Content-Type': contentType,
+    'Cache-Control': 'public, max-age=86400, immutable',
+  },
+});
 
 } catch (error) {
-console.error(‘Proxy error:’, error.message);
-return res.status(500).json({ error: ‘Failed to fetch image’, detail: error.message });
+return new Response(JSON.stringify({ error: ‘Failed to fetch image’, detail: error.message }), {
+status: 500,
+headers: { …corsHeaders, ‘Content-Type’: ‘application/json’ },
+});
 }
 }
