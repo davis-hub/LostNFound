@@ -1,6 +1,7 @@
 {
   "name": "lnf0-game",
   "version": "1.0.0",
+  "type": "module",
   "engines": {
     "node": "24.x"
   }
