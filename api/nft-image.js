@@ -1,6 +1,5 @@
-// api/nft-image.js
-const https = require(‘https’);
-const http = require(‘http’);
+import https from ‘https’;
+import http from ‘http’;
 
 function fetchImage(url, cb, redirectCount = 0) {
 if (redirectCount > 5) return cb(new Error(‘Too many redirects’));
@@ -20,7 +19,7 @@ cb(null, res);
 }).on(‘error’, (e) => cb(e));
 }
 
-module.exports = function handler(req, res) {
+export default function handler(req, res) {
 res.setHeader(‘Access-Control-Allow-Origin’, ‘*’);
 res.setHeader(‘Access-Control-Allow-Methods’, ‘GET, OPTIONS’);
 
@@ -47,4 +46,4 @@ res.setHeader(‘Cache-Control’, ‘public, max-age=86400’);
 res.status(200);
 upstream.pipe(res);
 });
-};
+}
