@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+[5/5/2026 11:51 AM] Ohnoroiza 🫶🏼♥️: <!DOCTYPE html>
 
 <html lang="en">
 <head>
@@ -43,7 +43,8 @@ body{background:var(--deep);font-family:'Exo 2',sans-serif;overflow:hidden;heigh
 .char-card{width:140px;background:rgba(255,255,255,.05);border:2px solid rgba(255,255,255,.15);border-radius:20px;padding:16px;text-align:center;cursor:pointer;transition:all .3s;-webkit-tap-highlight-color:transparent;}
 .char-card:hover,.char-card.selected{border-color:var(--glow);background:rgba(0,229,255,.1);box-shadow:0 0 20px rgba(0,229,255,.3);}
 .char-card .octo-big{font-size:60px;margin-bottom:8px;}
-.char-name{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:var(--glow);letter-spacing:2px;margin-bottom:4px;}
+.
+[5/5/2026 11:51 AM] Ohnoroiza 🫶🏼♥️: char-name{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:var(--glow);letter-spacing:2px;margin-bottom:4px;}
 .char-desc{font-size:10px;color:rgba(255,255,255,.5);line-height:1.5;}
 .locked-card{opacity:.4;cursor:default;}
 .locked-card .char-name{color:rgba(255,255,255,.3);}
@@ -86,7 +87,8 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
 /* ── LB ── */
 .lb-list{width:100%;max-width:320px;max-height:55vh;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(0,229,255,.3) transparent;}
 .lb-row{display:flex;justify-content:space-between;align-items:center;padding:6px 13px;border-bottom:1px solid rgba(255,255,255,.07);font-size:13px;}
-.lb-row:first-child{background:rgba(255,215,0,.08);}
+.
+[5/5/2026 11:51 AM] Ohnoroiza 🫶🏼♥️: lb-row:first-child{background:rgba(255,215,0,.08);}
 .lb-rank{color:var(--gold);font-family:'Orbitron',monospace;font-size:10px;width:26px;}
 .lb-name{color:#fff;font-weight:600;flex:1;text-align:center;}
 .lb-score{color:var(--glow);font-family:'Orbitron',monospace;font-size:11px;}
@@ -142,7 +144,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
       <div style="font-size:10px;color:rgba(255,255,255,.4);letter-spacing:1px;line-height:1.5">Hold a LnF0 NFT?<br>Connect to unlock your character.</div>
       <button id="walletBtn" onclick="connectWallet()" style="background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;padding:9px 16px;border-radius:24px;font-family:'Orbitron',monospace;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">🔗 CONNECT</button>
     </div>
-    <div id="walletStatus" style="font-size:10px;color:rgba(255,255,255,.3);min-height:14px;text-align:center;margin-top:6px"></div>
+[5/5/2026 11:51 AM] Ohnoroiza 🫶🏼♥️: <div id="walletStatus" style="font-size:10px;color:rgba(255,255,255,.3);min-height:14px;text-align:center;margin-top:6px"></div>
   </div>
   <div class="char-grid">
     <div class="char-card selected" id="card0" onclick="selectChar(0)">
@@ -234,7 +236,8 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
 <div class="overlay" id="nameEntry">
   <div class="ov-emoji">✍️</div>
   <div class="ov-title">ENTER NAME</div>
-  <input id="nameInput" maxlength="8" placeholder="YOUR NAME" style="background:rgba(255,255,255,.08);border:1px solid rgba(0,229,255,.3);color:#fff;font-family:'Orbitron',monospace;font-size:16px;text-align:center;padding:12px 20px;border-radius:30px;letter-spacing:3px;outline:none;width:220px;">
+  <input id="nameInput" maxlength="8" placeholder="YOUR NAME" style="background:rgba(255,255,255,.
+[5/5/2026 11:51 AM] Ohnoroiza 🫶🏼♥️: 08);border:1px solid rgba(0,229,255,.3);color:#fff;font-family:'Orbitron',monospace;font-size:16px;text-align:center;padding:12px 20px;border-radius:30px;letter-spacing:3px;outline:none;width:220px;">
   <button class="big-btn" onclick="saveScore()">CONFIRM 🐙</button>
 </div>
 
@@ -284,8 +287,7 @@ const ZONES=[
   {name:'HYDROTHERMAL VENT',bg:'radial-gradient(ellipse at 50% 80%,rgba(200,60,0,.35) 0%,transparent 60%),linear-gradient(180deg,#100204 0%,#080102 100%)'},
 ];
 function setZone(lvl){document.getElementById('oceanBg').style.background=ZONES[Math.min(lvl-1,7)].bg;}
-
-// ══ STORY CUTSCENES ═════════════════════════════════════════
+[5/5/2026 11:51 AM] Ohnoroiza 🫶🏼♥️: // ══ STORY CUTSCENES ═════════════════════════════════════════
 const STORIES=[
   // before level 1
   [{speaker:'NARRATOR',text:'Deep in the ocean, an octopus wakes.\nNo memory. No tentacles.\nJust darkness… and hunger.',octo:'🐙'},{speaker:'GRUMPY',text:'…Where am I?\nWhy do I feel so… incomplete?',octo:'😤'},{speaker:'NARRATOR',text:'Somewhere in the deep, a shadow laughs.\nThe tentacles were taken. All eight.\nFind them. Reclaim them.',octo:'🌊'}],
@@ -341,7 +343,12 @@ let selectedChar=0;
 function selectChar(n){
   if(n===4&&document.getElementById('card4').classList.contains('locked-card'))return;
   selectedChar=n;
-  document.querySelectorAll('.char-card').forEach((c,i)=>{c.classList.toggle('selected',i===n);});
+  // Deselect all standard cards
+  document.querySelectorAll('.char-card').forEach(c=>c.classList.remove('selected'));
+  // Select the right card
+  const cardId = n===5 ? 'cardNFT' : 'card'+n;
+  const card = document.getElementById(cardId);
+  if(card) card.classList.add('selected');
 }
 function checkUnlockSecret(){
   const scores=getScores();
@@ -357,8 +364,7 @@ function checkUnlockSecret(){
 }
 function showCharSelect(){checkUnlockSecret();hideAll();document.getElementById('charSelect').classList.add('active');}
 function startFromCharSelect(){showCutscene(STORIES[0],()=>startGame());}
-
-// ══ LEADERBOARD — SUPABASE GLOBAL ═══════════════════════════
+[5/5/2026 11:51 AM] Ohnoroiza 🫶🏼♥️: // ══ LEADERBOARD — SUPABASE GLOBAL ═══════════════════════════
 // ── ONE-TIME SETUP (5 minutes, free): ────────────────────────
 // 1. supabase.com → New project
 // 2. SQL Editor → run:
@@ -417,7 +423,7 @@ async function fetchGlobalScores(){
   try{
     // Fetch 500 rows then deduplicate — works without a DB view
     const r=await fetch(
-      `${SUPABASE_URL}/rest/v1/lnf0_scores?select=name,score,level&order=score.desc&limit=500`,
+      ${SUPABASE_URL}/rest/v1/lnf0_scores?select=name,score,level&order=score.desc&limit=500,
       {headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`},
        signal:AbortSignal.timeout(6000)}
     );
@@ -465,7 +471,7 @@ async function pushGlobalScore(name,score,level){
         'apikey':SUPABASE_KEY,
         'Authorization':`Bearer ${SUPABASE_KEY}`,
         'Content-Type':'application/json',
-        'Prefer':'resolution=merge-duplicates,return=minimal'
+[5/5/2026 11:51 AM] Ohnoroiza 🫶🏼♥️: 'Prefer':'resolution=merge-duplicates,return=minimal'
         // merge-duplicates = upsert on PRIMARY KEY (name)
         // DB trigger guard_score_update will silently reject if new score <= existing
       },
@@ -546,7 +552,7 @@ function shareScore(){
 }
 
 // ══ AUDIO ════════════════════════════════════════════════════
-let AC=null,mNodes={},mPlaying=false,mMuted=false;
+[5/5/2026 11:51 AM] Ohnoroiza 🫶🏼♥️: let AC=null,mNodes={},mPlaying=false,mMuted=false;
 function getAC(){if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();return AC;}
 function getMaster(){if(!mNodes.master){const ac=getAC();mNodes.master=ac.createGain();mNodes.master.gain.value=.62;mNodes.master.connect(ac.destination);}return mNodes.master;}
 function sfx(t){
@@ -562,7 +568,8 @@ function sfx(t){
     else if(t==='ally'){const o=ac.createOscillator();o.type='sine';o.frequency.setValueAtTime(330,ac.currentTime);o.frequency.exponentialRampToValueAtTime(550,ac.currentTime+.15);g.gain.setValueAtTime(.25,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.2);o.connect(g);o.start();o.stop(ac.currentTime+.2);}
     else if(t==='gameover'){[0,.18,.36,.55].forEach((d,i)=>{const o=ac.createOscillator();o.type='sine';o.frequency.value=[392,330,294,220][i];const og=ac.createGain();og.gain.setValueAtTime(.36,ac.currentTime+d);og.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d+.4);o.connect(og);og.connect(getMaster());o.start(ac.currentTime+d);o.stop(ac.currentTime+d+.4);});}
     else if(t==='win'){const m=[523,659,784,1047,784,1047,1319],tm=[0,.12,.24,.36,.52,.62,.72];m.forEach((f,i)=>{const o=ac.createOscillator();o.type='triangle';o.frequency.value=f;const og=ac.createGain();og.gain.setValueAtTime(.42,ac.currentTime+tm[i]);og.gain.exponentialRampToValueAtTime(.001,ac.currentTime+tm[i]+.28);o.connect(og);og.connect(getMaster());o.start(ac.currentTime+tm[i]);o.stop(ac.currentTime+tm[i]+.28);});}
-    else if(t==='unlock'){const o=ac.createOscillator();o.type='sine';o.frequency.setValueAtTime(440,ac.currentTime);o.frequency.exponentialRampToValueAtTime(1760,ac.currentTime+.25);g.gain.setValueAtTime(.3,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.3);o.connect(g);o.start();o.stop(ac.currentTime+.3);}
+    else if(t==='unlock'){const o=ac.createOscillator();o.type='sine';o.frequency.setValueAtTime(440,ac.currentTime);o.frequency.exponentialRampToValueAtTime(1760,ac.currentTime+.25);g.gain.setValueAtTime(.3,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.3);o.connect(g);o.start();o.
+[5/5/2026 11:51 AM] Ohnoroiza 🫶🏼♥️: stop(ac.currentTime+.3);}
     else if(t==='boss_hit'){const o=ac.createOscillator();o.type='square';o.frequency.setValueAtTime(80,ac.currentTime);o.frequency.exponentialRampToValueAtTime(30,ac.currentTime+.2);g.gain.setValueAtTime(.52,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.25);o.connect(g);o.start();o.stop(ac.currentTime+.25);}
   }catch(e){}
 }
@@ -602,7 +609,8 @@ function addCombo(){
 function resetCombo(){comboCount=0;comboMult=1;clearTimeout(comboTimer);document.getElementById('comboDisp').classList.remove('show');}
 
 // ══ VISIBILITY — pause when tab/phone goes background ═══════
-document.addEventListener('visibilitychange',()=>{
+document.
+[5/5/2026 11:51 AM] Ohnoroiza 🫶🏼♥️: addEventListener('visibilitychange',()=>{
   if(document.hidden){
     if(gameState.animFrame){cancelAnimationFrame(gameState.animFrame);gameState.animFrame=null;}
     stopMusic();
@@ -671,7 +679,8 @@ const DIFF=[
   {hp:3,time:60, foods:7, obsCount:6, obsSpeed:.85,obsTypes:['net','current'],  homing:false,allyCount:1,puCount:1}, // 3 easy
   {hp:3,time:55, foods:6, obsCount:9, obsSpeed:1.1,obsTypes:['net','current'],  homing:false,allyCount:1,puCount:2}, // 4 slightly medium
   {hp:2,time:45, foods:5, obsCount:12,obsSpeed:1.5,obsTypes:['net','current','predator'],homing:false,allyCount:1,puCount:2}, // 5 medium
-  {hp:2,time:38, foods:5, obsCount:16,obsSpeed:2.0,obsTypes:['net','current','predator'],homing:true, allyCount:1,puCount:2}, // 6 slightly hard
+  {hp:2,time:38, foods:5, obsCount:16,obsSpeed:2.
+[5/5/2026 11:51 AM] Ohnoroiza 🫶🏼♥️: 0,obsTypes:['net','current','predator'],homing:true, allyCount:1,puCount:2}, // 6 slightly hard
   {hp:2,time:40, foods:4, obsCount:11,obsSpeed:1.6,obsTypes:['net','current','predator'], homing:true, allyCount:1,puCount:2}, // 7 quite hard but beatable — max 4 homing sharks
   {hp:1,time:22, foods:4, obsCount:13,obsSpeed:2.5,obsTypes:['current','predator'],       homing:true, allyCount:0,puCount:1}, // 8 boss level, very hard
 ];
@@ -752,7 +761,8 @@ function fireInk(){
 function drawBg(fr,scrollX){
   // Scrolling parallax dots
   ctx.fillStyle='rgba(0,229,255,.08)';
-  for(let i=0;i<30;i++){const x=((i*137-scrollX*.3+fr*.1)%canvas.width+canvas.width)%canvas.width;const y=((i*97+fr*.08)%canvas.height);ctx.beginPath();ctx.arc(x,y,1.5,0,Math.PI*2);ctx.fill();}
+  for(let i=0;i<30;i++){const x=((i*137-scrollX*.3+fr*.1)%canvas.width+canvas.width)%canvas.width;const y=((i*97+fr*.08)%canvas.height);ctx.
+[5/5/2026 11:51 AM] Ohnoroiza 🫶🏼♥️: beginPath();ctx.arc(x,y,1.5,0,Math.PI*2);ctx.fill();}
   // Scrolling sea floor hint
   const fg=ctx.createLinearGradient(0,canvas.height*.78,0,canvas.height);fg.addColorStop(0,'transparent');fg.addColorStop(1,'rgba(0,10,30,.55)');ctx.fillStyle=fg;ctx.fillRect(0,0,canvas.width,canvas.height);
   // Parallax kelp/coral at different levels
@@ -781,7 +791,8 @@ function drawDripped(x,y,size,tents,fr,bobCap){
   ctx.save();ctx.translate(x,y);ctx.translate(0,Math.sin(fr*.05)*3);
   const grd=ctx.createRadialGradient(0,0,0,0,0,size*2.2);grd.addColorStop(0,'rgba(255,150,160,.25)');grd.addColorStop(1,'transparent');ctx.fillStyle=grd;ctx.beginPath();ctx.arc(0,0,size*2.2,0,Math.PI*2);ctx.fill();
   const aa=[200,220,240,260,280,300,320,340];
-  for(let i=0;i<tents;i++){const a=(aa[i]*Math.PI)/180,w=Math.sin(fr*.07+i*.8)*10;const tg=ctx.createLinearGradient(Math.cos(a)*size*.5,Math.sin(a)*size*.5,Math.cos(a)*size*2,Math.sin(a)*size*2);tg.addColorStop(0,'#e8748a');tg.addColorStop(.5,'#d45870');tg.addColorStop(1,'#c04060');ctx.strokeStyle=tg;ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(Math.cos(a)*size*.5,Math.sin(a)*size*.5);ctx.bezierCurveTo(Math.cos(a)*size*1.1+w,Math.sin(a)*size*1.1,Math.cos(a)*size*1.6+w*1.3,Math.sin(a)*size*1.6+w*.5,Math.cos(a)*size*2+w*.8,Math.sin(a)*size*2+w);ctx.stroke();ctx.strokeStyle='#ff8fa0';ctx.lineWidth=2;ctx.beginPath();ctx.arc(Math.cos(a)*size*2+w*.8,Math.sin(a)*size*2+w,size*.18,0,Math.PI*1.5);ctx.stroke();}
+  for(let i=0;i<tents;i++){const a=(aa[i]*Math.PI)/180,w=Math.sin(fr*.07+i*.8)*10;const tg=ctx.createLinearGradient(Math.cos(a)*size*.5,Math.sin(a)*size*.5,Math.cos(a)*size*2,Math.
+[5/5/2026 11:51 AM] Ohnoroiza 🫶🏼♥️: sin(a)*size*2);tg.addColorStop(0,'#e8748a');tg.addColorStop(.5,'#d45870');tg.addColorStop(1,'#c04060');ctx.strokeStyle=tg;ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(Math.cos(a)*size*.5,Math.sin(a)*size*.5);ctx.bezierCurveTo(Math.cos(a)*size*1.1+w,Math.sin(a)*size*1.1,Math.cos(a)*size*1.6+w*1.3,Math.sin(a)*size*1.6+w*.5,Math.cos(a)*size*2+w*.8,Math.sin(a)*size*2+w);ctx.stroke();ctx.strokeStyle='#ff8fa0';ctx.lineWidth=2;ctx.beginPath();ctx.arc(Math.cos(a)*size*2+w*.8,Math.sin(a)*size*2+w,size*.18,0,Math.PI*1.5);ctx.stroke();}
   const bg=ctx.createRadialGradient(-size*.1,-size*.3,0,0,0,size*1.1);bg.addColorStop(0,'#f0a0b0');bg.addColorStop(.4,'#d97088');bg.addColorStop(1,'#b85070');ctx.fillStyle=bg;ctx.beginPath();ctx.roundRect(-size*.65,-size*.9,size*1.3,size*1.3,size*.45);ctx.fill();
   ctx.fillStyle='#1a1a2e';ctx.beginPath();ctx.roundRect(-size*.6,size*.05,size*1.2,size*.55,[0,0,size*.3,size*.3]);ctx.fill();ctx.fillStyle='#00ff88';ctx.font=`bold ${size*.13}px 'Orbitron',monospace`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('LnF0',0,size*.32);
   ctx.fillStyle='#f5a623';ctx.beginPath();ctx.roundRect(-size*.6,-size*.18,size*1.2,size*.32,size*.12);ctx.fill();ctx.fillStyle='rgba(255,255,255,.5)';ctx.font=`${size*.18}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('₿',-size*.3,-size*.04);ctx.fillText('₿',size*.3,-size*.04);
@@ -799,7 +810,8 @@ function drawPhantom(x,y,size,tents,fr){
   for(let i=0;i<tents;i++){const a=(aa[i]*Math.PI)/180,w=Math.sin(fr*.07+i*.8)*10;const tg=ctx.createLinearGradient(Math.cos(a)*size*.5,Math.sin(a)*size*.5,Math.cos(a)*size*2,Math.sin(a)*size*2);tg.addColorStop(0,'#ffd700');tg.addColorStop(.6,'#ff8c00');tg.addColorStop(1,'#ffd700');ctx.strokeStyle=tg;ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(Math.cos(a)*size*.5,Math.sin(a)*size*.5);ctx.bezierCurveTo(Math.cos(a)*size*1.1+w,Math.sin(a)*size*1.1,Math.cos(a)*size*1.6+w*1.3,Math.sin(a)*size*1.6+w*.5,Math.cos(a)*size*2+w*.8,Math.sin(a)*size*2+w);ctx.stroke();}
   const bg=ctx.createRadialGradient(-size*.15,-size*.3,0,0,size*.1,size*1.1);bg.addColorStop(0,'#ffe066');bg.addColorStop(.4,'#ffd700');bg.addColorStop(1,'#b8860b');ctx.fillStyle=bg;ctx.beginPath();ctx.ellipse(0,-size*.1,size*.8,size,0,0,Math.PI*2);ctx.fill();
   // All-seeing eyes
-  ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(-size*.26,-size*.2,size*.22,size*.24,0,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(size*.26,-size*.2,size*.22,size*.24,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#fff';ctx.beginPath();ctx.
+[5/5/2026 11:51 AM] Ohnoroiza 🫶🏼♥️: ellipse(-size*.26,-size*.2,size*.22,size*.24,0,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(size*.26,-size*.2,size*.22,size*.24,0,0,Math.PI*2);ctx.fill();
   ctx.fillStyle='rgba(0,0,0,.8)';ctx.beginPath();ctx.arc(-size*.26,-size*.18,size*.13,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(size*.26,-size*.18,size*.13,0,Math.PI*2);ctx.fill();
   // Golden pupils
   ctx.fillStyle='#ffd700';ctx.beginPath();ctx.arc(-size*.26,-size*.18,size*.07,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(size*.26,-size*.18,size*.07,0,Math.PI*2);ctx.fill();
@@ -852,7 +864,8 @@ function drawBrey(x,y,size,tents,fr){
   ctx.beginPath();ctx.ellipse(-size*.28,-size*.04,size*.16,size*.2,-.3,0,Math.PI*2);ctx.fill();
   ctx.beginPath();ctx.ellipse(size*.28,-size*.04,size*.16,size*.2,.3,0,Math.PI*2);ctx.fill();
   // Orange mirror shades
-  const shadeGrd=ctx.createLinearGradient(-size*.5,-size*.55,size*.5,-size*.35);
+  const shadeGrd=ctx.createLinearGradient(-size*.5,-size*.55,size*.5,-size*.
+[5/5/2026 11:51 AM] Ohnoroiza 🫶🏼♥️: 35);
   shadeGrd.addColorStop(0,'#ff8800');shadeGrd.addColorStop(.5,'#ffaa00');shadeGrd.addColorStop(1,'#ff6600');
   ctx.fillStyle='#111';ctx.beginPath();ctx.roundRect(-size*.62,-size*.72,size*1.24,size*.16,size*.05);ctx.fill();// frame
   ctx.fillStyle=shadeGrd;
@@ -906,7 +919,8 @@ function drawTropico(x,y,size,tents,fr){
   // Big sparkly eyes — signature Tropico look
   ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(-size*.24,-size*.3,size*.24,size*.26,0,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(size*.24,-size*.3,size*.24,size*.26,0,0,Math.PI*2);ctx.fill();
   // Dark irises — large
-  ctx.fillStyle='#111';ctx.beginPath();ctx.arc(-size*.24,-size*.3,size*.17,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(size*.24,-size*.3,size*.17,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#111';ctx.beginPath();ctx.arc(-size*.24,-size*.3,size*.17,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(size*.24,-size*.3,size*.17,0,Math.PI*2);ctx.
+[5/5/2026 11:51 AM] Ohnoroiza 🫶🏼♥️: fill();
   // Highlight — big sparkle
   ctx.fillStyle='white';ctx.beginPath();ctx.arc(-size*.18,-size*.37,size*.08,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(size*.3,-size*.37,size*.08,0,Math.PI*2);ctx.fill();
   // Small second sparkle
@@ -950,7 +964,8 @@ function drawAlly(ally,fr){
 function drawFood(food,fr){
   if(food.collected)return;
   ctx.save();ctx.translate(food.x,food.y);ctx.translate(0,Math.sin(fr*.06+food.wobble)*5);
-  const g=ctx.createRadialGradient(0,0,0,0,0,food.size*2);g.addColorStop(0,'rgba(255,107,53,.4)');g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,food.size*2,0,Math.PI*2);ctx.fill();
+  const g=ctx.createRadialGradient(0,0,0,0,0,food.size*2);g.addColorStop(0,'rgba(255,107,53,.4)');g.
+[5/5/2026 11:51 AM] Ohnoroiza 🫶🏼♥️: addColorStop(1,'transparent');ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,food.size*2,0,Math.PI*2);ctx.fill();
   ctx.font=`${food.size*1.8}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🦐',0,0);ctx.restore();
 }
 
@@ -997,7 +1012,8 @@ function drawHUD(){
   if(hasTimer){
     const tc=t<=5?'#ff4466':t<=10?'#ffd700':'#00e5ff';
     ctx.font=`bold 15px 'Orbitron',monospace`;ctx.fillStyle=tc;ctx.textAlign='center';ctx.fillText(`⏱ ${t}s`,canvas.width/2,36);
-    if(t<=5&&s.frame%30<15){ctx.shadowBlur=0;ctx.fillStyle='rgba(255,45,85,.1)';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.shadowBlur=6;}
+    if(t<=5&&s.
+[5/5/2026 11:51 AM] Ohnoroiza 🫶🏼♥️: frame%30<15){ctx.shadowBlur=0;ctx.fillStyle='rgba(255,45,85,.1)';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.shadowBlur=6;}
   }
   ctx.font=`bold 10px 'Exo 2',sans-serif`;ctx.fillStyle='#ffffff';ctx.textAlign='center';ctx.fillText(ZONES[Math.min(s.level-1,7)].name,canvas.width/2,hasTimer?52:36);
   const rem=s.foods.filter(f=>!f.collected).length;
@@ -1067,7 +1083,7 @@ function gameLoop(){
       }
       ally.x=Math.max(20,Math.min(W-20,ally.x+ally.vx));
       ally.y=Math.max(80,Math.min(H-60,ally.y+ally.vy));
-    });
+[5/5/2026 11:51 AM] Ohnoroiza 🫶🏼♥️: });
 
     // Boss
     if(s.boss){
@@ -1129,274 +1145,3 @@ function gameLoop(){
         pu.collected=true;sfx('powerup');spawnP(pu.x,pu.y,'#ffd700',14);
         if(pu.type==='speed'){s.player.speedBoost=300;showPU('⚡ SPEED BOOST!','#ffd700');}
         else if(pu.type==='shield'){s.player.shield=true;showPU('🔵 SHIELD ON!','#00e5ff');}
-        else if(pu.type==='inkstorm'){s.obstacles.forEach(o=>o.frozen=240);s.inkClouds.push({x:W/2,y:H/2,r:Math.max(W,H),born:s.frame,hitBoss:false});showPU('🖤 INK STORM!','#7c3aed');}
-        else if(pu.type==='magnet'){s.player.magnet=true;setTimeout(()=>{if(gameState.player)gameState.player.magnet=false;},5000);showPU('🧲 MAGNET ON!','#ff6b35');}
-      }
-    });
-
-    // Tentacle goal
-    if(s.tentacleItem&&!s.tentacleLocked&&!s.boss){
-      const dx=s.player.x-s.tentacleItem.x,dy=s.player.y-s.tentacleItem.y;
-      if(Math.sqrt(dx*dx+dy*dy)<s.player.size+s.tentacleItem.size){
-        s.levelClearing=true;s.tentacles++;
-        const timeBonus=s.timeLeft<999?s.timeLeft*10:0;
-        s.score+=300+s.level*80+timeBonus;
-        sfx('tentacle');spawnP(s.tentacleItem.x,s.tentacleItem.y,'#00ff88',20);spawnP(s.player.x,s.player.y,'#7c3aed',16);
-        updateHUD();setTimeout(()=>showLevelClear(),600);
-      }
-    }
-  }
-  drawScene();s.animFrame=requestAnimationFrame(gameLoop);
-}
-
-function drawScene(){
-  const s=gameState;
-  s.obstacles.forEach(o=>drawObs(o,s.frame));drawInk();
-  s.foods.forEach(f=>drawFood(f,s.frame));
-  s.powerups&&s.powerups.forEach(p=>drawPU(p,s.frame));
-  s.allies&&s.allies.forEach(a=>drawAlly(a,s.frame));
-  drawTentItem(s.tentacleItem,s.tentacleLocked);
-  if(s.boss)drawBoss(s.boss,s.frame);
-  if(!(s.player.invincible>0&&s.frame%6<3))drawOctopus(s.player.x,s.player.y,s.player.size,s.tentacles,s.frame);
-  drawDrag();drawHUD();
-}
-
-// ══ HUD ══════════════════════════════════════════════════════
-function renderTitleTents(n){const el=document.getElementById('titleTents');el.innerHTML='';for(let i=0;i<8;i++){const d=document.createElement('div');d.className='t-dot'+(i<n?' found':'');el.appendChild(d);}}
-renderTitleTents(0);
-
-function updateHUD(){
-  const s=gameState;
-  document.getElementById('levelVal').textContent=String(s.level).padStart(2,'0');
-  document.getElementById('scoreVal').textContent=s.score.toLocaleString();
-  const hud=document.getElementById('tentsHud');hud.innerHTML='';
-  for(let i=0;i<8;i++){const p=document.createElement('div');p.className='t-pip'+(i<s.tentacles?' active':'');hud.appendChild(p);}
-}
-
-function hideAll(){
-  ['titleScreen','charSelect','cutscene','gameScreen','levelClear','gameOver','nameEntry','leaderboard','winScreen'].forEach(id=>{
-    const el=document.getElementById(id);el.classList.remove('active','show');
-  });
-}
-
-// ══ SCREEN FLOWS ════════════════════════════════════════════
-function startGame(){
-  getAC();gameState=initState();genLevel(gameState);setZone(1);
-  hideAll();document.getElementById('gameScreen').classList.add('active');
-  updateHUD();startMusic(1);gameLoop();
-}
-
-function showLevelClear(){
-  sfx('tentacle');
-  // Trigger story cutscene at key moments
-  const storyTriggers={3:1,5:2,7:3};
-  if(gameState.tentacles>=8){
-    cancelAnimationFrame(gameState.animFrame);stopMusic();
-    setTimeout(()=>sfx('win'),200);
-    document.getElementById('winScore').textContent=gameState.score.toLocaleString()+' PTS';
-    // Win cutscene then show win screen
-    showCutscene(STORIES[4],()=>{
-      document.querySelectorAll('.screen').forEach(el=>el.classList.remove('active'));
-      document.getElementById('winScreen').classList.add('show');
-    });
-    return;
-  }
-  const emojis=['💜','✨','🌊','⭐','💫','🔮','🌀','🎯'];
-  document.getElementById('clearEmoji').textContent=emojis[gameState.tentacles-1]||'✨';
-  document.getElementById('clearTitle').textContent=`TENTACLE ${gameState.tentacles} FOUND!`;
-  document.getElementById('clearSub').innerHTML=`<span>${gameState.tentacles}/8</span> tentacles recovered.<br>Score: <span>${gameState.score.toLocaleString()}</span><br>Dive deeper into the abyss.`;
-  document.getElementById('levelClear').classList.add('show');
-}
-
-function showGameOver(reason='CAUGHT'){
-  cancelAnimationFrame(gameState.animFrame);stopMusic();sfx('gameover');
-  document.getElementById('goSub').innerHTML=`<span>${reason}</span> · Level ${gameState.level}<br>Score: <span>${gameState.score.toLocaleString()}</span><br>The deep took you. Rise again.`;
-  document.getElementById('gameOver').classList.add('show');
-}
-
-function nextLevel(){
-  document.getElementById('levelClear').classList.remove('show');
-  if(gameState.animFrame){cancelAnimationFrame(gameState.animFrame);gameState.animFrame=null;}
-  gameState.level++;
-  const storyAt={3:1,5:2,7:3};
-  const storyIdx=storyAt[gameState.level];
-  const doNext=()=>{
-    genLevel(gameState);setZone(gameState.level);updateHUD();
-    document.querySelectorAll('.screen').forEach(el=>el.classList.remove('active'));
-    document.getElementById('gameScreen').classList.add('active');
-    startMusic(gameState.level);gameLoop();
-  };
-  if(storyIdx!==undefined) showCutscene(STORIES[storyIdx],doNext);
-  else doNext();
-}
-
-function restartGame(){
-  ['gameOver','winScreen','nameEntry'].forEach(id=>document.getElementById(id).classList.remove('show'));
-  if(gameState.animFrame)cancelAnimationFrame(gameState.animFrame);
-  hideAll();document.getElementById('charSelect').classList.add('active');checkUnlockSecret();
-}
-
-function goTitle(){
-  document.getElementById('gameOver').classList.remove('show');
-  if(gameState.animFrame)cancelAnimationFrame(gameState.animFrame);
-  stopMusic();hideAll();document.getElementById('titleScreen').classList.add('active');renderTitleTents(0);
-}
-
-// ══ WALLET CONNECT + NFT CHARACTER ═══════════════════════════
-const ALCHEMY_KEY = 'rz6IlJjQHvbKgjBYQAOfM';
-const NFT_CONTRACT = '0x26305bE149Ba0a58CFD821Cabea9139Da7b1CB14';
-let walletAddress = null;
-let nftImage = null; // loaded Image element
-let nftImageTainted = false;
-
-function showWalletStatus(msg, color){
-  const el = document.getElementById('walletStatus');
-  if(el){ el.textContent = msg; el.style.color = color||'rgba(255,255,255,.4)'; }
-}
-
-// Draw NFT character — image displayed as HTML overlay to avoid canvas taint
-let _nftOverlay = null;
-function getNFTOverlay(){
-  if(!_nftOverlay){
-    _nftOverlay = document.createElement('img');
-    _nftOverlay.style.cssText = 'position:fixed;border-radius:50%;border:2px solid rgba(0,229,255,.6);pointer-events:none;z-index:15;object-fit:cover;box-shadow:0 0 18px rgba(0,229,255,.4);display:none;';
-    document.body.appendChild(_nftOverlay);
-  }
-  return _nftOverlay;
-}
-function hideNFTOverlay(){ if(_nftOverlay) _nftOverlay.style.display='none'; }
-
-function drawNFTChar(x,y,size,tents,fr){
-  const bob = Math.sin(fr*.05)*3;
-  ctx.save(); ctx.translate(x, y+bob);
-  // Glow
-  const grd=ctx.createRadialGradient(0,0,0,0,0,size*2.4);
-  grd.addColorStop(0,'rgba(0,229,255,0.2)'); grd.addColorStop(1,'transparent');
-  ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(0,0,size*2.4,0,Math.PI*2); ctx.fill();
-  // Tentacles
-  const aa=[200,220,240,260,280,300,320,340];
-  for(let i=0;i<tents;i++){
-    const a=(aa[i]*Math.PI)/180, w=Math.sin(fr*.07+i*.8)*10;
-    ctx.strokeStyle='rgba(100,100,200,.7)'; ctx.lineWidth=5; ctx.lineCap='round';
-    ctx.beginPath();
-    ctx.moveTo(Math.cos(a)*size*.45, Math.sin(a)*size*.45);
-    ctx.bezierCurveTo(Math.cos(a)*size*1.1+w,Math.sin(a)*size*1.1,Math.cos(a)*size*1.6+w*1.3,Math.sin(a)*size*1.6+w*.5,Math.cos(a)*size*2+w*.8,Math.sin(a)*size*2+w);
-    ctx.stroke();
-  }
-  // Body circle placeholder
-  ctx.fillStyle='rgba(40,60,140,.5)';
-  ctx.beginPath(); ctx.arc(0,-size*.1,size*1.2,0,Math.PI*2); ctx.fill();
-  ctx.strokeStyle='rgba(0,229,255,.5)'; ctx.lineWidth=2;
-  ctx.beginPath(); ctx.arc(0,-size*.1,size*1.2,0,Math.PI*2); ctx.stroke();
-  ctx.restore();
-
-  // Show NFT image as HTML overlay (no canvas taint)
-  if(nftImage && nftImage.src){
-    const el = getNFTOverlay();
-    const d = (size*2.4)+'px';
-    el.style.display='block'; el.style.width=d; el.style.height=d;
-    el.style.left=(x-size*1.2)+'px'; el.style.top=(y+bob-size*1.3)+'px';
-    if(el.src !== nftImage.src) el.src = nftImage.src;
-  } else {
-    ctx.save();
-    ctx.font=`${size*1.4}px serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText('🐙',x,y+bob); ctx.restore();
-    hideNFTOverlay();
-  }
-}
-
-// Hide overlay when not in game
-const _origHideAll = hideAll;
-function hideAll(){
-  hideNFTOverlay();
-  _origHideAll();
-}
-
-async function connectWallet(){
-  const btn = document.getElementById('walletBtn');
-  if(walletAddress){
-    walletAddress=null; nftImage=null;
-    localStorage.removeItem('lnf0_wallet');
-    btn.textContent='🔗 CONNECT';
-    showWalletStatus('','');
-    document.getElementById('cardNFT').style.display='none';
-    if(selectedChar===5) selectedChar=0;
-    return;
-  }
-  btn.textContent='CONNECTING...';
-  try{
-    if(window.ethereum){
-      const accounts = await window.ethereum.request({method:'eth_requestAccounts'});
-      if(accounts&&accounts.length){ await onWalletConnected(accounts[0]); return; }
-    }
-    showWalletStatus('No wallet found — use MetaMask or a Web3 browser','rgba(255,200,0,.8)');
-    btn.textContent='🔗 CONNECT';
-  }catch(e){
-    showWalletStatus(e.code===4001?'Cancelled':'Connection failed','rgba(255,255,255,.4)');
-    btn.textContent='🔗 CONNECT';
-  }
-}
-
-async function onWalletConnected(address){
-  walletAddress=address;
-  localStorage.setItem('lnf0_wallet',address);
-  const btn=document.getElementById('walletBtn');
-  if(btn) btn.textContent=address.slice(0,6)+'...'+address.slice(-4);
-  showWalletStatus('Checking your NFTs...','rgba(0,229,255,.7)');
-  try{
-    const url=`https://eth-mainnet.g.alchemy.com/nft/v3/${ALCHEMY_KEY}/getNFTsForOwner?owner=${address}&contractAddresses[]=${NFT_CONTRACT}&withMetadata=true&limit=10`;
-    const r=await fetch(url,{signal:AbortSignal.timeout(8000)});
-    if(!r.ok) throw new Error('Alchemy error '+r.status);
-    const data=await r.json();
-    const nfts=data.ownedNfts||[];
-    if(nfts.length>0){
-      showWalletStatus(`✅ ${nfts.length} LnF0 NFT${nfts.length>1?'s':''} found!`,'#00ff88');
-      // Load NFT image
-      const first=nfts[0];
-      const rawUrl=first.image?.cachedUrl||first.image?.thumbnailUrl||first.raw?.metadata?.image||null;
-      if(rawUrl){
-        const imgUrl=rawUrl.startsWith('ipfs://')?rawUrl.replace('ipfs://','https://cloudflare-ipfs.com/ipfs/'):rawUrl;
-        const proxyUrl=`https://corsproxy.io/?${encodeURIComponent(imgUrl)}`;
-        const img=new Image();
-        img.onload=()=>{
-          nftImage=img;
-          // Show NFT card
-          const card=document.getElementById('cardNFT');
-          if(card){
-            card.style.display='block';
-            const desc=document.getElementById('nftCardDesc');
-            if(desc) desc.textContent=first.name||first.raw?.metadata?.name||'My NFT';
-          }
-          // Auto select NFT character
-          selectChar(5);
-        };
-        img.onerror=()=>{
-          // Show card anyway even without image
-          const card=document.getElementById('cardNFT');
-          if(card) card.style.display='block';
-          selectChar(5);
-        };
-        img.src=proxyUrl;
-      } else {
-        const card=document.getElementById('cardNFT');
-        if(card) card.style.display='block';
-        selectChar(5);
-      }
-    } else {
-      showWalletStatus('No LnF0 NFTs found in this wallet','rgba(255,200,0,.8)');
-    }
-  }catch(e){
-    console.warn('NFT check failed:',e);
-    showWalletStatus('Connected: '+address.slice(0,6)+'...'+address.slice(-4),'#00ff88');
-  }
-}
-
-// Restore wallet on load
-try{
-  const saved=localStorage.getItem('lnf0_wallet');
-  if(saved) setTimeout(()=>onWalletConnected(saved),1500);
-}catch(e){}
-</script>
-
-</body>
-</html>
