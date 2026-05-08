@@ -1,0 +1,9 @@
+{
+  "buildCommand": "npm install && npm run build",
+  "outputDirectory": "dist",
+  "functions": {
+    "api/nft-image.js": {
+      "maxDuration": 10
+    }
+  }
+}
